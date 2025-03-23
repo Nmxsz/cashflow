@@ -75,7 +75,9 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
         name: _nameController.text,
         category: _selectedCategory,
         totalDebt: int.parse(_totalDebtController.text),
-        monthlyPayment: int.parse(_monthlyPaymentController.text),
+        monthlyPayment: _selectedCategory == 'Immobilien-Hypothek'
+            ? (int.parse(_totalDebtController.text) * 0.01).round()
+            : int.parse(_monthlyPaymentController.text),
       );
 
       if (_editMode && _editingIndex >= 0) {
@@ -508,23 +510,32 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _monthlyPaymentController,
-                          decoration: const InputDecoration(
-                            labelText: 'Monatliche Rate (€)',
-                            border: OutlineInputBorder(),
+                        if (_selectedCategory != 'Immobilien-Hypothek')
+                          TextFormField(
+                            controller: _monthlyPaymentController,
+                            decoration: const InputDecoration(
+                              labelText: 'Monatliche Rate (€)',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Bitte gib die monatliche Rate ein';
+                              }
+                              return null;
+                            },
                           ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
-                          ],
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Bitte gib die monatliche Rate ein';
-                            }
-                            return null;
-                          },
-                        ),
+                        if (_selectedCategory == 'Immobilien-Hypothek')
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Text(
+                              'Monatliche Rate: ${(int.tryParse(_totalDebtController.text) ?? 0) * 0.01} € (1% der Gesamtschuld)',
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ),
 
                         const SizedBox(height: 16),
                         ElevatedButton(

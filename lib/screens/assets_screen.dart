@@ -16,14 +16,19 @@ class _AssetsScreenState extends State<AssetsScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _costController = TextEditingController();
   final TextEditingController _downPaymentController = TextEditingController();
-  final TextEditingController _monthlyIncomeController = TextEditingController();
+  final TextEditingController _monthlyIncomeController =
+      TextEditingController();
   final TextEditingController _sharesController = TextEditingController();
   final TextEditingController _costPerShareController = TextEditingController();
-  
+
   // Kategorien für Assets
-  final List<String> _categories = ['Aktien/Fonds/CDs', 'Immobilien', 'Geschäfte'];
+  final List<String> _categories = [
+    'Aktien/Fonds/CDs',
+    'Immobilien',
+    'Geschäfte'
+  ];
   String _selectedCategory = 'Aktien/Fonds/CDs';
-  
+
   // Flag, ob wir im Bearbeitungsmodus sind
   bool _editMode = false;
   int _editingIndex = -1;
@@ -63,20 +68,20 @@ class _AssetsScreenState extends State<AssetsScreen> {
       _selectedCategory = asset.category;
       _costController.text = asset.cost.toString();
       _downPaymentController.text = asset.downPayment.toString();
-      
+
       // Kategorie-spezifische Felder
       if (asset.monthlyIncome != null) {
         _monthlyIncomeController.text = asset.monthlyIncome.toString();
       } else {
         _monthlyIncomeController.clear();
       }
-      
+
       if (asset.shares != null) {
         _sharesController.text = asset.shares.toString();
       } else {
         _sharesController.clear();
       }
-      
+
       if (asset.costPerShare != null) {
         _costPerShareController.text = asset.costPerShare.toString();
       } else {
@@ -91,7 +96,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
       // Für Aktien: Kosten = Anzahl der Anteile * Kosten pro Anteil
       final shares = int.tryParse(_sharesController.text) ?? 0;
       final costPerShare = int.tryParse(_costPerShareController.text) ?? 0;
-      
+
       // Aktualisiere den Wert im Controller, auch wenn das Feld nicht angezeigt wird
       _costController.text = (shares * costPerShare).toString();
     }
@@ -102,11 +107,11 @@ class _AssetsScreenState extends State<AssetsScreen> {
     if (_formKey.currentState?.validate() ?? false) {
       // Erstelle das Asset-Objekt basierend auf der Kategorie
       Asset asset;
-      
+
       if (_selectedCategory == 'Aktien/Fonds/CDs') {
         final shares = int.tryParse(_sharesController.text) ?? 0;
         final costPerShare = int.tryParse(_costPerShareController.text) ?? 0;
-        
+
         asset = Asset(
           name: _nameController.text,
           category: _selectedCategory,
@@ -122,8 +127,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
           name: _nameController.text,
           category: _selectedCategory,
           cost: int.parse(_costController.text),
-          downPayment: int.parse(_downPaymentController.text.isEmpty 
-              ? '0' 
+          downPayment: int.parse(_downPaymentController.text.isEmpty
+              ? '0'
               : _downPaymentController.text),
           monthlyIncome: int.parse(_monthlyIncomeController.text),
         );
@@ -162,7 +167,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Vermögenswert löschen'),
-        content: const Text('Möchtest du diesen Vermögenswert wirklich löschen? Du erhältst keinen Erlös zurück.'),
+        content: const Text(
+            'Möchtest du diesen Vermögenswert wirklich löschen? Du erhältst keinen Erlös zurück.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -171,7 +177,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              Provider.of<PlayerProvider>(context, listen: false).deleteAsset(index);
+              Provider.of<PlayerProvider>(context, listen: false)
+                  .deleteAsset(index);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Vermögenswert erfolgreich gelöscht!'),
@@ -194,15 +201,17 @@ class _AssetsScreenState extends State<AssetsScreen> {
   // Verkauft ein Asset und erhält den Erlös
   void _sellAsset(int index, Asset asset) {
     // Unterschiedliche Dialoge je nach Kategorie
-    if (asset.category == 'Aktien/Fonds/CDs' && asset.shares != null && asset.costPerShare != null) {
+    if (asset.category == 'Aktien/Fonds/CDs' &&
+        asset.shares != null &&
+        asset.costPerShare != null) {
       // Für Aktien/Fonds/CDs: Verkaufspreis pro Anteil eingeben
-      final TextEditingController sellPricePerShareController = 
+      final TextEditingController sellPricePerShareController =
           TextEditingController(text: asset.costPerShare.toString());
-      
+
       // Gesamtverkaufswert als ValueNotifier, um den Wert aktuell zu halten
-      final ValueNotifier<int> totalSellPriceNotifier = 
+      final ValueNotifier<int> totalSellPriceNotifier =
           ValueNotifier<int>(asset.shares! * asset.costPerShare!);
-          
+
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -211,7 +220,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Zu welchem Preis pro Anteil möchtest du ${asset.name} verkaufen?'),
+              Text(
+                  'Zu welchem Preis pro Anteil möchtest du ${asset.name} verkaufen?'),
               const SizedBox(height: 16),
               TextFormField(
                 controller: sellPricePerShareController,
@@ -232,7 +242,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Anzahl der Anteile:'),
-                  Text('${asset.shares}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('${asset.shares}',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 8),
@@ -245,7 +256,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
                     builder: (context, totalSellPrice, _) {
                       return Text(
                         '$totalSellPrice €',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
                       );
                     },
                   ),
@@ -277,30 +289,34 @@ class _AssetsScreenState extends State<AssetsScreen> {
             ),
             TextButton(
               onPressed: () {
-                final sellPricePerShare = int.tryParse(sellPricePerShareController.text) ?? asset.costPerShare!;
+                final sellPricePerShare =
+                    int.tryParse(sellPricePerShareController.text) ??
+                        asset.costPerShare!;
                 final totalSellPrice = asset.shares! * sellPricePerShare;
                 Navigator.of(context).pop();
-                
+
                 // Berechne Gewinn oder Verlust
                 final profit = totalSellPrice - asset.cost;
                 String profitText = '';
                 Color profitColor = Colors.green;
-                
+
                 if (profit > 0) {
                   profitText = ' (Gewinn: $profit €)';
                 } else if (profit < 0) {
                   profitText = ' (Verlust: ${profit.abs()} €)';
                   profitColor = Colors.red;
                 }
-                
-                Provider.of<PlayerProvider>(context, listen: false).sellAsset(index, totalSellPrice);
+
+                Provider.of<PlayerProvider>(context, listen: false)
+                    .sellAsset(index, totalSellPrice);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('${asset.name} für $totalSellPrice €$profitText verkauft!'),
+                    content: Text(
+                        '${asset.name} für $totalSellPrice €$profitText verkauft!'),
                     backgroundColor: profitColor,
                   ),
                 );
-                
+
                 // Falls wir gerade dieses Asset bearbeiten, Formular zurücksetzen
                 if (_editMode && _editingIndex == index) {
                   _resetForm();
@@ -318,8 +334,9 @@ class _AssetsScreenState extends State<AssetsScreen> {
       });
     } else {
       // Originaler Dialog für andere Asset-Typen
-      final TextEditingController sellPriceController = TextEditingController(text: asset.cost.toString());
-      
+      final TextEditingController sellPriceController =
+          TextEditingController(text: asset.cost.toString());
+
       // Bestätigungsdialog anzeigen
       showDialog(
         context: context,
@@ -354,25 +371,28 @@ class _AssetsScreenState extends State<AssetsScreen> {
             ),
             TextButton(
               onPressed: () {
-                final sellPrice = int.tryParse(sellPriceController.text) ?? asset.cost;
+                final sellPrice =
+                    int.tryParse(sellPriceController.text) ?? asset.cost;
                 Navigator.of(context).pop();
-                
+
                 // Berechne Gewinn oder Verlust
                 final profit = sellPrice - asset.cost;
                 String profitText = '';
                 Color profitColor = Colors.green;
-                
+
                 if (profit > 0) {
                   profitText = ' (Gewinn: $profit €)';
                 } else if (profit < 0) {
                   profitText = ' (Verlust: ${profit.abs()} €)';
                   profitColor = Colors.red;
                 }
-                
-                Provider.of<PlayerProvider>(context, listen: false).sellAsset(index, sellPrice);
+
+                Provider.of<PlayerProvider>(context, listen: false)
+                    .sellAsset(index, sellPrice);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('${asset.name} für $sellPrice €$profitText verkauft!'),
+                    content: Text(
+                        '${asset.name} für $sellPrice €$profitText verkauft!'),
                     backgroundColor: profitColor,
                   ),
                 );
@@ -551,7 +571,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
                                     'Gesamt-Vermögenswert:',
@@ -573,7 +594,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                               ),
                             ),
                           ),
-                          
+
                           // Liste der Vermögenswerte
                           Expanded(
                             child: ListView.builder(
@@ -581,39 +602,58 @@ class _AssetsScreenState extends State<AssetsScreen> {
                               itemBuilder: (context, index) {
                                 final asset = playerData.assets[index];
                                 return Card(
-                                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
                                   child: ListTile(
                                     title: Text(asset.name),
                                     subtitle: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text('Kategorie: ${asset.category}'),
-                                        if (asset.category == 'Aktien/Fonds/CDs' && asset.shares != null && asset.costPerShare != null)
-                                          Text('${asset.shares} Anteile zu je ${asset.costPerShare} € (Gesamt: ${asset.cost} €)'),
-                                        if (asset.category == 'Aktien/Fonds/CDs' && (asset.shares == null || asset.costPerShare == null))
+                                        if (asset.category ==
+                                                'Aktien/Fonds/CDs' &&
+                                            asset.shares != null &&
+                                            asset.costPerShare != null)
+                                          Text(
+                                              '${asset.shares} Anteile zu je ${asset.costPerShare} € (Gesamt: ${asset.cost} €)'),
+                                        if (asset.category ==
+                                                'Aktien/Fonds/CDs' &&
+                                            (asset.shares == null ||
+                                                asset.costPerShare == null))
                                           Text('Gesamtwert: ${asset.cost} €'),
-                                        if (asset.category != 'Aktien/Fonds/CDs')
-                                          Text('Kosten: ${asset.cost} € | Einkommen: ${asset.monthlyIncome} €'),
+                                        if (asset.category !=
+                                            'Aktien/Fonds/CDs')
+                                          Text(
+                                              'Kosten: ${asset.cost} € | Einkommen: ${asset.monthlyIncome} €'),
                                         // Weitere kategoriespezifische Informationen
-                                        if (asset.category != 'Aktien/Fonds/CDs' && asset.downPayment > 0)
-                                          Text('Anzahlung: ${asset.downPayment} €'),
+                                        if (asset.category !=
+                                                'Aktien/Fonds/CDs' &&
+                                            asset.downPayment > 0)
+                                          Text(
+                                              'Anzahlung: ${asset.downPayment} €'),
                                       ],
                                     ),
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         IconButton(
-                                          icon: const Icon(Icons.edit, color: Colors.blue),
-                                          onPressed: () => _prepareForEditing(asset, index),
+                                          icon: const Icon(Icons.edit,
+                                              color: Colors.blue),
+                                          onPressed: () =>
+                                              _prepareForEditing(asset, index),
                                           tooltip: 'Bearbeiten',
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.sell, color: Colors.green),
-                                          onPressed: () => _sellAsset(index, asset),
+                                          icon: const Icon(Icons.sell,
+                                              color: Colors.green),
+                                          onPressed: () =>
+                                              _sellAsset(index, asset),
                                           tooltip: 'Verkaufen',
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          icon: const Icon(Icons.delete,
+                                              color: Colors.red),
                                           onPressed: () => _deleteAsset(index),
                                           tooltip: 'Löschen',
                                         ),
@@ -640,9 +680,9 @@ class _AssetsScreenState extends State<AssetsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          _editMode 
-                            ? 'Vermögenswert bearbeiten' 
-                            : 'Neuen Vermögenswert hinzufügen',
+                          _editMode
+                              ? 'Vermögenswert bearbeiten'
+                              : 'Neuen Vermögenswert hinzufügen',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -670,12 +710,12 @@ class _AssetsScreenState extends State<AssetsScreen> {
                             border: OutlineInputBorder(),
                           ),
                           value: _selectedCategory,
-                          items: _categories.map((category) => 
-                            DropdownMenuItem(
-                              value: category,
-                              child: Text(category),
-                            )
-                          ).toList(),
+                          items: _categories
+                              .map((category) => DropdownMenuItem(
+                                    value: category,
+                                    child: Text(category),
+                                  ))
+                              .toList(),
                           onChanged: (value) {
                             if (value != null) {
                               setState(() {
@@ -692,20 +732,24 @@ class _AssetsScreenState extends State<AssetsScreen> {
                             }
                           },
                         ),
-                        
+
                         // Kategorieabhängige Felder
                         _buildCategorySpecificFields(),
-                        
+
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _saveAsset,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _editMode ? Colors.blue : Colors.green,
+                            backgroundColor:
+                                _editMode ? Colors.blue : Colors.green,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           child: Text(
-                            _editMode ? 'Vermögenswert aktualisieren' : 'Vermögenswert hinzufügen',
-                            style: const TextStyle(fontSize: 16, color: Colors.white),
+                            _editMode
+                                ? 'Vermögenswert aktualisieren'
+                                : 'Vermögenswert hinzufügen',
+                            style: const TextStyle(
+                                fontSize: 16, color: Colors.white),
                           ),
                         ),
                       ],
@@ -719,4 +763,4 @@ class _AssetsScreenState extends State<AssetsScreen> {
       ),
     );
   }
-} 
+}

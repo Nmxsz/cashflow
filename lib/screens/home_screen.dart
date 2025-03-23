@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/index.dart';
 import '../services/player_service.dart';
@@ -37,7 +38,276 @@ class _HomeScreenState extends State<HomeScreen> {
           MaterialPageRoute(builder: (context) => const LiabilitiesScreen()),
         );
         break;
+      case 'buy_property':
+        _showBuyPropertyDialog(context);
+        break;
+      case 'add_money':
+        _showAddMoneyDialog(context);
+        break;
     }
+  }
+
+  void _showBuyPropertyDialog(BuildContext context) {
+    final _formKey = GlobalKey<FormState>();
+    final _nameController = TextEditingController();
+    final _costController = TextEditingController();
+    final _mortgageController = TextEditingController();
+    final _downPaymentController = TextEditingController();
+    final _cashflowController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Immobilie kaufen'),
+        content: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Name der Immobilie',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Bitte geben Sie einen Namen ein';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _costController,
+                  decoration: const InputDecoration(
+                    labelText: 'Kosten (€)',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Bitte geben Sie die Kosten ein';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _downPaymentController,
+                  decoration: const InputDecoration(
+                    labelText: 'Anzahlung (€)',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Bitte geben Sie die Anzahlung ein';
+                    }
+                    final downPayment = int.parse(value);
+                    final cost = int.parse(_costController.text);
+                    if (downPayment >= cost) {
+                      return 'Anzahlung muss kleiner als die Kosten sein';
+                    }
+                    return null;
+                  },
+                  onChanged: (value) {
+                    // Aktualisiere die Hypothek automatisch
+                    if (value.isNotEmpty && _costController.text.isNotEmpty) {
+                      final downPayment = int.parse(value);
+                      final cost = int.parse(_costController.text);
+                      _mortgageController.text =
+                          (cost - downPayment).toString();
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _mortgageController,
+                  decoration: const InputDecoration(
+                    labelText: 'Hypothek (€)',
+                    border: OutlineInputBorder(),
+                    helperText:
+                        'Wird automatisch aus Kosten - Anzahlung berechnet',
+                  ),
+                  enabled: false,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _cashflowController,
+                  decoration: const InputDecoration(
+                    labelText: 'Cashflow pro Monat (€)',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Bitte geben Sie den Cashflow ein';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (_formKey.currentState?.validate() ?? false) {
+                final cost = int.parse(_costController.text);
+                final downPayment = int.parse(_downPaymentController.text);
+                final mortgage = cost - downPayment;
+                final cashflow = int.parse(_cashflowController.text);
+                final name = _nameController.text;
+
+                // Berechne die monatliche Rate (1% der Hypothek)
+                final monthlyPayment = (mortgage * 0.01).round();
+
+                final playerProvider =
+                    Provider.of<PlayerProvider>(context, listen: false);
+
+                // Prüfe, ob genügend Ersparnisse für die Anzahlung vorhanden sind
+                if (playerProvider.playerData!.savings < downPayment) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content:
+                          Text('Nicht genügend Ersparnisse für die Anzahlung!'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                // Füge Vermögenswert hinzu
+                playerProvider.addAsset(Asset(
+                  name: name,
+                  cost: cost,
+                  category: 'Immobilien',
+                  monthlyIncome: cashflow,
+                  downPayment: downPayment,
+                ));
+
+                // Füge Hypothek hinzu
+                playerProvider.addLiability(Liability(
+                  name: 'Hypothek: $name',
+                  category: 'Immobilien-Hypothek',
+                  totalDebt: mortgage,
+                  monthlyPayment: monthlyPayment,
+                ));
+
+                Navigator.of(context).pop();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Immobilie erfolgreich gekauft!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            child: const Text('Kaufen'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddMoneyDialog(BuildContext context) {
+    final _formKey = GlobalKey<FormState>();
+    final _amountController = TextEditingController();
+    final _reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Geld hinzufügen'),
+        content: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _amountController,
+                decoration: const InputDecoration(
+                  labelText: 'Betrag (€)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Bitte geben Sie einen Betrag ein';
+                  }
+                  if (int.parse(value) <= 0) {
+                    return 'Der Betrag muss größer als 0 sein';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Grund',
+                  border: OutlineInputBorder(),
+                  helperText: 'z.B. Geschenk, Bonus, Verkauf, etc.',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Bitte geben Sie einen Grund ein';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (_formKey.currentState?.validate() ?? false) {
+                final amount = int.parse(_amountController.text);
+                final reason = _reasonController.text;
+
+                final playerProvider =
+                    Provider.of<PlayerProvider>(context, listen: false);
+                final currentSavings = playerProvider.playerData!.savings;
+
+                // Aktualisiere die Ersparnisse
+                playerProvider.updatePlayerStats(
+                  savings: currentSavings + amount,
+                );
+
+                Navigator.of(context).pop();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('$amount € hinzugefügt (Grund: $reason)'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            child: const Text('Hinzufügen'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -120,6 +390,26 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icon(Icons.credit_card),
                         SizedBox(width: 8),
                         Text('Kredit'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'buy_property',
+                    child: Row(
+                      children: [
+                        Icon(Icons.home),
+                        SizedBox(width: 8),
+                        Text('Immobilie kaufen'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'add_money',
+                    child: Row(
+                      children: [
+                        Icon(Icons.add_circle, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text('Geld hinzufügen'),
                       ],
                     ),
                   ),
