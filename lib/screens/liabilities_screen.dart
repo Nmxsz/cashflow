@@ -143,6 +143,163 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
     );
   }
 
+  // Zahlt eine Verbindlichkeit vollständig ab
+  void _payOffLiability(Liability liability, int index) {
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    final playerData = playerProvider.playerData;
+
+    if (playerData == null) return;
+
+    // Prüfe, ob genügend Ersparnisse vorhanden sind
+    if (playerData.savings < liability.totalDebt) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nicht genügend Ersparnisse vorhanden!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Bestätigungsdialog anzeigen
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Verbindlichkeit abzahlen'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+                'Möchtest du diese Verbindlichkeit vollständig abzahlen?'),
+            const SizedBox(height: 12),
+            Text('Gesamtschuld: ${liability.totalDebt} €'),
+            Text('Monatliche Rate: ${liability.monthlyPayment} €'),
+            const SizedBox(height: 12),
+            if (liability.category == 'Bankdarlehen')
+              const Text(
+                'Hinweis: Bankdarlehen können nur teilweise abgezahlt werden.',
+                style: TextStyle(color: Colors.orange),
+              ),
+            if (liability.category == 'Eigenheim-Hypothek')
+              const Text(
+                'Hinweis: Die monatliche Rate wird von den Ausgaben abgezogen.',
+                style: TextStyle(color: Colors.blue),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+
+              // Aktualisiere die Spielerdaten
+              final newSavings = playerData.savings - liability.totalDebt;
+
+              // Finde die entsprechende Ausgabe
+              final expenseIndex = playerData.expenses.indexWhere((expense) {
+                if (liability.category == 'Eigenheim-Hypothek') {
+                  return expense.type == ExpenseType.homePayment;
+                } else if (liability.category == 'BAföG-Darlehen') {
+                  return expense.type == ExpenseType.schoolLoan;
+                } else if (liability.category == 'Autokredite') {
+                  return expense.type == ExpenseType.carLoan;
+                } else if (liability.category == 'Kreditkarten') {
+                  return expense.type == ExpenseType.creditCard;
+                } else if (liability.category == 'Verbraucherkreditschulden') {
+                  return expense.type == ExpenseType.retail;
+                }
+                return false;
+              });
+
+              // Berechne die neuen Ausgaben
+              int newTotalExpenses = playerData.totalExpenses;
+
+              if (expenseIndex != -1) {
+                final expense = playerData.expenses[expenseIndex];
+                if (liability.category == 'Eigenheim-Hypothek') {
+                  // Bei Hypotheken: Reduziere nur die Rate
+                  final newAmount = expense.amount - liability.monthlyPayment;
+                  if (newAmount > 0) {
+                    // Aktualisiere die Ausgabe
+                    playerProvider.updateExpense(
+                        expenseIndex,
+                        Expense(
+                          name: expense.name,
+                          amount: newAmount,
+                          type: expense.type,
+                        ));
+                    newTotalExpenses =
+                        playerData.totalExpenses - liability.monthlyPayment;
+                  } else {
+                    // Lösche die Ausgabe, wenn keine Rate mehr übrig ist
+                    playerProvider.deleteExpense(expenseIndex);
+                    newTotalExpenses =
+                        playerData.totalExpenses - expense.amount;
+                  }
+                } else {
+                  // Bei anderen Verbindlichkeiten: Lösche die Ausgabe
+                  playerProvider.deleteExpense(expenseIndex);
+                  newTotalExpenses = playerData.totalExpenses - expense.amount;
+                }
+              }
+
+              final newCashflow = playerData.salary +
+                  playerData.passiveIncome -
+                  newTotalExpenses;
+
+              if (liability.category == 'Bankdarlehen') {
+                // Bei Bankdarlehen: Reduziere die Gesamtschuld und monatliche Rate
+                final reducedDebt =
+                    liability.totalDebt ~/ 2; // Reduziere um die Hälfte
+                final reducedPayment = liability.monthlyPayment ~/ 2;
+
+                final updatedLiability = Liability(
+                  name: liability.name,
+                  category: liability.category,
+                  totalDebt: liability.totalDebt - reducedDebt,
+                  monthlyPayment: liability.monthlyPayment - reducedPayment,
+                );
+
+                playerProvider.updateLiability(index, updatedLiability);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Bankdarlehen teilweise zurückgezahlt!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                // Bei anderen Verbindlichkeiten: Lösche die Verbindlichkeit
+                playerProvider.deleteLiability(index);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Verbindlichkeit erfolgreich abgezahlt!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+
+              // Aktualisiere die Spielerdaten
+              playerProvider.updatePlayerStats(
+                savings: newSavings,
+                totalExpenses: newTotalExpenses,
+                cashflow: newCashflow,
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.green),
+            child: const Text('Abzahlen'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -238,6 +395,14 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        // Abzahlen-Button
+                                        IconButton(
+                                          icon: const Icon(Icons.payment,
+                                              color: Colors.green),
+                                          onPressed: () => _payOffLiability(
+                                              liability, index),
+                                          tooltip: 'Abzahlen',
+                                        ),
                                         IconButton(
                                           icon: const Icon(Icons.edit,
                                               color: Colors.blue),
