@@ -423,32 +423,55 @@ class _HomeScreenState extends State<HomeScreen> {
         final playerData = playerProvider.playerData;
 
         if (playerData == null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Willkommen bei Cashflow Tracker!',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          return Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/CashflowIMG.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Center(
+                child: Card(
+                  margin: const EdgeInsets.all(16),
+                  color: Theme.of(context).cardColor.withOpacity(0.9),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Willkommen bei Cashflow Tracker!',
+                          style: TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Du hast noch kein Profil eingerichtet.',
+                          style: TextStyle(fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 30),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const ProfileSetupScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text('Profil einrichten'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Du hast noch kein Profil eingerichtet.',
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ProfileSetupScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('Profil einrichten'),
-                ),
-              ],
+              ),
             ),
           );
         }
