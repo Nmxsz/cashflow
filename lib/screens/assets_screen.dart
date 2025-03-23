@@ -17,6 +17,12 @@ class _AssetsScreenState extends State<AssetsScreen> {
   final TextEditingController _costController = TextEditingController();
   final TextEditingController _downPaymentController = TextEditingController();
   final TextEditingController _monthlyIncomeController = TextEditingController();
+  final TextEditingController _sharesController = TextEditingController();
+  final TextEditingController _costPerShareController = TextEditingController();
+  
+  // Kategorien für Assets
+  final List<String> _categories = ['Aktien/Fonds/CDs', 'Immobilien', 'Geschäfte'];
+  String _selectedCategory = 'Aktien/Fonds/CDs';
   
   // Flag, ob wir im Bearbeitungsmodus sind
   bool _editMode = false;
@@ -28,6 +34,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
     _costController.dispose();
     _downPaymentController.dispose();
     _monthlyIncomeController.dispose();
+    _sharesController.dispose();
+    _costPerShareController.dispose();
     super.dispose();
   }
 
@@ -40,6 +48,9 @@ class _AssetsScreenState extends State<AssetsScreen> {
       _costController.clear();
       _downPaymentController.clear();
       _monthlyIncomeController.clear();
+      _sharesController.clear();
+      _costPerShareController.clear();
+      _selectedCategory = 'Aktien/Fonds/CDs';
     });
   }
 
@@ -49,23 +60,74 @@ class _AssetsScreenState extends State<AssetsScreen> {
       _editMode = true;
       _editingIndex = index;
       _nameController.text = asset.name;
+      _selectedCategory = asset.category;
       _costController.text = asset.cost.toString();
       _downPaymentController.text = asset.downPayment.toString();
-      _monthlyIncomeController.text = asset.monthlyIncome.toString();
+      
+      // Kategorie-spezifische Felder
+      if (asset.monthlyIncome != null) {
+        _monthlyIncomeController.text = asset.monthlyIncome.toString();
+      } else {
+        _monthlyIncomeController.clear();
+      }
+      
+      if (asset.shares != null) {
+        _sharesController.text = asset.shares.toString();
+      } else {
+        _sharesController.clear();
+      }
+      
+      if (asset.costPerShare != null) {
+        _costPerShareController.text = asset.costPerShare.toString();
+      } else {
+        _costPerShareController.clear();
+      }
     });
+  }
+
+  // Berechnet die Kosten basierend auf der Kategorie und den Eingaben
+  void _calculateCost() {
+    if (_selectedCategory == 'Aktien/Fonds/CDs') {
+      // Für Aktien: Kosten = Anzahl der Anteile * Kosten pro Anteil
+      final shares = int.tryParse(_sharesController.text) ?? 0;
+      final costPerShare = int.tryParse(_costPerShareController.text) ?? 0;
+      
+      // Aktualisiere den Wert im Controller, auch wenn das Feld nicht angezeigt wird
+      _costController.text = (shares * costPerShare).toString();
+    }
   }
 
   // Speichert das Asset (neu oder bearbeitet)
   void _saveAsset() {
     if (_formKey.currentState?.validate() ?? false) {
-      final asset = Asset(
-        name: _nameController.text,
-        cost: int.parse(_costController.text),
-        downPayment: int.parse(_downPaymentController.text.isEmpty 
-            ? '0' 
-            : _downPaymentController.text),
-        monthlyIncome: int.parse(_monthlyIncomeController.text),
-      );
+      // Erstelle das Asset-Objekt basierend auf der Kategorie
+      Asset asset;
+      
+      if (_selectedCategory == 'Aktien/Fonds/CDs') {
+        final shares = int.tryParse(_sharesController.text) ?? 0;
+        final costPerShare = int.tryParse(_costPerShareController.text) ?? 0;
+        
+        asset = Asset(
+          name: _nameController.text,
+          category: _selectedCategory,
+          cost: int.parse(_costController.text),
+          downPayment: 0, // Keine Anzahlung bei Aktien
+          // Kein monatliches Einkommen für Aktien/Fonds/CDs
+          shares: shares,
+          costPerShare: costPerShare,
+        );
+      } else {
+        // Für Immobilien und Geschäfte
+        asset = Asset(
+          name: _nameController.text,
+          category: _selectedCategory,
+          cost: int.parse(_costController.text),
+          downPayment: int.parse(_downPaymentController.text.isEmpty 
+              ? '0' 
+              : _downPaymentController.text),
+          monthlyIncome: int.parse(_monthlyIncomeController.text),
+        );
+      }
 
       if (_editMode && _editingIndex >= 0) {
         // Asset aktualisieren
@@ -131,78 +193,315 @@ class _AssetsScreenState extends State<AssetsScreen> {
 
   // Verkauft ein Asset und erhält den Erlös
   void _sellAsset(int index, Asset asset) {
-    final TextEditingController sellPriceController = TextEditingController(text: asset.cost.toString());
-    
-    // Bestätigungsdialog anzeigen
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Vermögenswert verkaufen'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Für wie viel möchtest du ${asset.name} verkaufen?'),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: sellPriceController,
-              decoration: const InputDecoration(
-                labelText: 'Verkaufspreis (€)',
-                border: OutlineInputBorder(),
+    // Unterschiedliche Dialoge je nach Kategorie
+    if (asset.category == 'Aktien/Fonds/CDs' && asset.shares != null && asset.costPerShare != null) {
+      // Für Aktien/Fonds/CDs: Verkaufspreis pro Anteil eingeben
+      final TextEditingController sellPricePerShareController = 
+          TextEditingController(text: asset.costPerShare.toString());
+      
+      // Gesamtverkaufswert als ValueNotifier, um den Wert aktuell zu halten
+      final ValueNotifier<int> totalSellPriceNotifier = 
+          ValueNotifier<int>(asset.shares! * asset.costPerShare!);
+          
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Aktien verkaufen'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Zu welchem Preis pro Anteil möchtest du ${asset.name} verkaufen?'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: sellPricePerShareController,
+                decoration: const InputDecoration(
+                  labelText: 'Preis pro Anteil (€)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onChanged: (value) {
+                  // Aktualisiere den Gesamtpreis bei Änderung
+                  final pricePerShare = int.tryParse(value) ?? 0;
+                  totalSellPriceNotifier.value = asset.shares! * pricePerShare;
+                },
               ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Anzahl der Anteile:'),
+                  Text('${asset.shares}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Gesamtverkaufswert:'),
+                  ValueListenableBuilder<int>(
+                    valueListenable: totalSellPriceNotifier,
+                    builder: (context, totalSellPrice, _) {
+                      return Text(
+                        '$totalSellPrice €',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Ursprünglicher Preis pro Anteil:'),
+                  Text('${asset.costPerShare} €'),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Ursprünglicher Gesamtwert:'),
+                  Text('${asset.cost} €'),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Abbrechen'),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Anschaffungspreis: ${asset.cost} €',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            TextButton(
+              onPressed: () {
+                final sellPricePerShare = int.tryParse(sellPricePerShareController.text) ?? asset.costPerShare!;
+                final totalSellPrice = asset.shares! * sellPricePerShare;
+                Navigator.of(context).pop();
+                
+                // Berechne Gewinn oder Verlust
+                final profit = totalSellPrice - asset.cost;
+                String profitText = '';
+                Color profitColor = Colors.green;
+                
+                if (profit > 0) {
+                  profitText = ' (Gewinn: $profit €)';
+                } else if (profit < 0) {
+                  profitText = ' (Verlust: ${profit.abs()} €)';
+                  profitColor = Colors.red;
+                }
+                
+                Provider.of<PlayerProvider>(context, listen: false).sellAsset(index, totalSellPrice);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${asset.name} für $totalSellPrice €$profitText verkauft!'),
+                    backgroundColor: profitColor,
+                  ),
+                );
+                
+                // Falls wir gerade dieses Asset bearbeiten, Formular zurücksetzen
+                if (_editMode && _editingIndex == index) {
+                  _resetForm();
+                }
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
+              child: const Text('Verkaufen'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Abbrechen'),
-          ),
-          TextButton(
-            onPressed: () {
-              final sellPrice = int.tryParse(sellPriceController.text) ?? asset.cost;
-              Navigator.of(context).pop();
-              
-              // Berechne Gewinn oder Verlust
-              final profit = sellPrice - asset.cost;
-              String profitText = '';
-              Color profitColor = Colors.green;
-              
-              if (profit > 0) {
-                profitText = ' (Gewinn: $profit €)';
-              } else if (profit < 0) {
-                profitText = ' (Verlust: ${profit.abs()} €)';
-                profitColor = Colors.red;
-              }
-              
-              Provider.of<PlayerProvider>(context, listen: false).sellAsset(index, sellPrice);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${asset.name} für $sellPrice €$profitText verkauft!'),
-                  backgroundColor: profitColor,
+      ).then((_) {
+        // Stellen Sie sicher, dass die Controller aufgeräumt werden
+        sellPricePerShareController.dispose();
+        totalSellPriceNotifier.dispose();
+      });
+    } else {
+      // Originaler Dialog für andere Asset-Typen
+      final TextEditingController sellPriceController = TextEditingController(text: asset.cost.toString());
+      
+      // Bestätigungsdialog anzeigen
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Vermögenswert verkaufen'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Für wie viel möchtest du ${asset.name} verkaufen?'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: sellPriceController,
+                decoration: const InputDecoration(
+                  labelText: 'Verkaufspreis (€)',
+                  border: OutlineInputBorder(),
                 ),
-              );
-              // Falls wir gerade dieses Asset bearbeiten, Formular zurücksetzen
-              if (_editMode && _editingIndex == index) {
-                _resetForm();
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Anschaffungspreis: ${asset.cost} €',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Abbrechen'),
+            ),
+            TextButton(
+              onPressed: () {
+                final sellPrice = int.tryParse(sellPriceController.text) ?? asset.cost;
+                Navigator.of(context).pop();
+                
+                // Berechne Gewinn oder Verlust
+                final profit = sellPrice - asset.cost;
+                String profitText = '';
+                Color profitColor = Colors.green;
+                
+                if (profit > 0) {
+                  profitText = ' (Gewinn: $profit €)';
+                } else if (profit < 0) {
+                  profitText = ' (Verlust: ${profit.abs()} €)';
+                  profitColor = Colors.red;
+                }
+                
+                Provider.of<PlayerProvider>(context, listen: false).sellAsset(index, sellPrice);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${asset.name} für $sellPrice €$profitText verkauft!'),
+                    backgroundColor: profitColor,
+                  ),
+                );
+                // Falls wir gerade dieses Asset bearbeiten, Formular zurücksetzen
+                if (_editMode && _editingIndex == index) {
+                  _resetForm();
+                }
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
+              child: const Text('Verkaufen'),
+            ),
+          ],
+        ),
+      ).then((_) {
+        // Stellen Sie sicher, dass der Controller aufgeräumt wird
+        sellPriceController.dispose();
+      });
+    }
+  }
+
+  // Baut die kategorieabhängigen Formularfelder
+  Widget _buildCategorySpecificFields() {
+    if (_selectedCategory == 'Aktien/Fonds/CDs') {
+      return Column(
+        children: [
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Anzahl der Anteile
+              Expanded(
+                child: TextFormField(
+                  controller: _sharesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Anzahl der Anteile',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Bitte gib die Anzahl ein';
+                    }
+                    return null;
+                  },
+                  onChanged: (_) => _calculateCost(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Kosten pro Anteil
+              Expanded(
+                child: TextFormField(
+                  controller: _costPerShareController,
+                  decoration: const InputDecoration(
+                    labelText: 'Kosten pro Anteil (€)',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Bitte gib die Kosten ein';
+                    }
+                    return null;
+                  },
+                  onChanged: (_) => _calculateCost(),
+                ),
+              ),
+            ],
+          ),
+          // Gesamtkosten-Feld entfernt - wird intern berechnet
+        ],
+      );
+    } else {
+      // Für Immobilien und Geschäfte
+      return Column(
+        children: [
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _costController,
+            decoration: const InputDecoration(
+              labelText: 'Gesamtkosten (€)',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Bitte gib die Kosten ein';
               }
+              return null;
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.green),
-            child: const Text('Verkaufen'),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _downPaymentController,
+            decoration: const InputDecoration(
+              labelText: 'Anzahlung (€)',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            validator: (value) {
+              // Anzahlung ist für diese Kategorien erforderlich
+              if (value == null || value.isEmpty) {
+                return 'Bitte gib die Anzahlung ein';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _monthlyIncomeController,
+            decoration: const InputDecoration(
+              labelText: 'Monatliches Einkommen (€)',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Bitte gib das monatliche Einkommen ein';
+              }
+              return null;
+            },
           ),
         ],
-      ),
-    ).then((_) {
-      // Stellen Sie sicher, dass der Controller aufgeräumt wird
-      sellPriceController.dispose();
-    });
+      );
+    }
   }
 
   @override
@@ -248,7 +547,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                           // Übersicht-Karte für den Gesamtwert
                           Card(
                             margin: const EdgeInsets.all(16),
-                            color: Colors.green.shade50,
+                            color: Colors.green.shade800,
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Row(
@@ -259,14 +558,15 @@ class _AssetsScreenState extends State<AssetsScreen> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
+                                      color: Colors.white,
                                     ),
                                   ),
                                   Text(
                                     '$totalAssetsValue €',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.green.shade800,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ],
@@ -284,8 +584,20 @@ class _AssetsScreenState extends State<AssetsScreen> {
                                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                   child: ListTile(
                                     title: Text(asset.name),
-                                    subtitle: Text(
-                                      'Kosten: ${asset.cost} € | Einkommen: ${asset.monthlyIncome} €',
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Kategorie: ${asset.category}'),
+                                        if (asset.category == 'Aktien/Fonds/CDs' && asset.shares != null && asset.costPerShare != null)
+                                          Text('${asset.shares} Anteile zu je ${asset.costPerShare} € (Gesamt: ${asset.cost} €)'),
+                                        if (asset.category == 'Aktien/Fonds/CDs' && (asset.shares == null || asset.costPerShare == null))
+                                          Text('Gesamtwert: ${asset.cost} €'),
+                                        if (asset.category != 'Aktien/Fonds/CDs')
+                                          Text('Kosten: ${asset.cost} € | Einkommen: ${asset.monthlyIncome} €'),
+                                        // Weitere kategoriespezifische Informationen
+                                        if (asset.category != 'Aktien/Fonds/CDs' && asset.downPayment > 0)
+                                          Text('Anzahlung: ${asset.downPayment} €'),
+                                      ],
                                     ),
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -307,6 +619,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                                         ),
                                       ],
                                     ),
+                                    isThreeLine: true,
                                   ),
                                 );
                               },
@@ -350,47 +663,39 @@ class _AssetsScreenState extends State<AssetsScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _costController,
+                        // Kategorieauswahl
+                        DropdownButtonFormField<String>(
                           decoration: const InputDecoration(
-                            labelText: 'Kosten (€)',
+                            labelText: 'Kategorie',
                             border: OutlineInputBorder(),
                           ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Bitte gib die Kosten ein';
+                          value: _selectedCategory,
+                          items: _categories.map((category) => 
+                            DropdownMenuItem(
+                              value: category,
+                              child: Text(category),
+                            )
+                          ).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedCategory = value;
+                                // Zurücksetzen der spezifischen Felder
+                                if (_selectedCategory == 'Aktien/Fonds/CDs') {
+                                  _downPaymentController.text = '0';
+                                  _monthlyIncomeController.text = '0';
+                                } else {
+                                  _sharesController.clear();
+                                  _costPerShareController.clear();
+                                }
+                              });
                             }
-                            return null;
                           },
                         ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _downPaymentController,
-                          decoration: const InputDecoration(
-                            labelText: 'Anzahlung (€) (optional)',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _monthlyIncomeController,
-                          decoration: const InputDecoration(
-                            labelText: 'Monatliches Einkommen (€)',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Bitte gib das monatliche Einkommen ein';
-                            }
-                            return null;
-                          },
-                        ),
+                        
+                        // Kategorieabhängige Felder
+                        _buildCategorySpecificFields(),
+                        
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _saveAsset,

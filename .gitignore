@@ -13,6 +13,8 @@
 /android/
 /web/
 /windows/
+/linux/
+/macos/
 migrate_working_dir/
 
 # IntelliJ related

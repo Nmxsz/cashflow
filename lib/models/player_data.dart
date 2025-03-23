@@ -95,7 +95,7 @@ class PlayerData {
   // Fügt einen Vermögenswert hinzu und aktualisiert passives Einkommen
   void addAsset(Asset asset) {
     assets.add(asset);
-    passiveIncome += asset.monthlyIncome;
+    passiveIncome += asset.monthlyIncome ?? 0;  // Null-Check mit Standardwert 0
     savings -= asset.cost;
     calculateCashflow();
     calculateNetWorth();  // Aktualisiere Gesamtvermögen nach Vermögenswert-Hinzufügung
@@ -114,10 +114,10 @@ class PlayerData {
     if (index >= 0 && index < assets.length) {
       // Entferne den Einfluss des alten Assets
       Asset oldAsset = assets[index];
-      passiveIncome -= oldAsset.monthlyIncome;
+      passiveIncome -= oldAsset.monthlyIncome ?? 0;  // Null-Check mit Standardwert 0
       
       // Füge den Einfluss des neuen Assets hinzu
-      passiveIncome += updatedAsset.monthlyIncome;
+      passiveIncome += updatedAsset.monthlyIncome ?? 0;  // Null-Check mit Standardwert 0
       
       // Passe das Guthaben an, falls sich die Kosten geändert haben
       if (updatedAsset.cost != oldAsset.cost) {
@@ -139,7 +139,7 @@ class PlayerData {
       Asset asset = assets[index];
       
       // Entferne den Einfluss des Assets
-      passiveIncome -= asset.monthlyIncome;
+      passiveIncome -= asset.monthlyIncome ?? 0;  // Null-Check mit Standardwert 0
       
       // Füge den Vermögenswert wieder zum Guthaben hinzu (optional, je nach Spieldesign)
       // savings += asset.cost;
@@ -195,7 +195,7 @@ class PlayerData {
       Asset asset = assets[index];
       
       // Entferne den Einfluss des Assets
-      passiveIncome -= asset.monthlyIncome;
+      passiveIncome -= asset.monthlyIncome ?? 0;  // Null-Check mit Standardwert 0
       
       // Füge den Verkaufserlös zum Guthaben hinzu
       savings += sellPrice;

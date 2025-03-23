@@ -165,7 +165,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                           // Übersicht-Karte für die Gesamtschulden
                           Card(
                             margin: const EdgeInsets.all(16),
-                            color: Colors.red.shade50,
+                            color: Colors.red.shade800,
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Row(
@@ -176,14 +176,15 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
+                                      color: Colors.white,
                                     ),
                                   ),
                                   Text(
                                     '$totalDebt €',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.red.shade800,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ],
