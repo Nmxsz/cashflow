@@ -15,8 +15,23 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _totalDebtController = TextEditingController();
-  final TextEditingController _monthlyPaymentController = TextEditingController();
-  
+  final TextEditingController _monthlyPaymentController =
+      TextEditingController();
+
+  // Kategorien für Verbindlichkeiten
+  final List<String> _categories = [
+    'Eigenheim-Hypothek',
+    'BAföG-Darlehen',
+    'Autokredite',
+    'Kreditkarten',
+    'Verbraucherkreditschulden',
+    'Immobilien-Hypothek',
+    'Geschäfte',
+    'Bankdarlehen',
+    'Sonstige'
+  ];
+  String _selectedCategory = 'Sonstige';
+
   // Flag, ob wir im Bearbeitungsmodus sind
   bool _editMode = false;
   int _editingIndex = -1;
@@ -37,6 +52,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
       _nameController.clear();
       _totalDebtController.clear();
       _monthlyPaymentController.clear();
+      _selectedCategory = 'Sonstige';
     });
   }
 
@@ -46,6 +62,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
       _editMode = true;
       _editingIndex = index;
       _nameController.text = liability.name;
+      _selectedCategory = liability.category;
       _totalDebtController.text = liability.totalDebt.toString();
       _monthlyPaymentController.text = liability.monthlyPayment.toString();
     });
@@ -56,6 +73,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
     if (_formKey.currentState?.validate() ?? false) {
       final liability = Liability(
         name: _nameController.text,
+        category: _selectedCategory,
         totalDebt: int.parse(_totalDebtController.text),
         monthlyPayment: int.parse(_monthlyPaymentController.text),
       );
@@ -72,7 +90,8 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
         );
       } else {
         // Neue Verbindlichkeit hinzufügen
-        Provider.of<PlayerProvider>(context, listen: false).addLiability(liability);
+        Provider.of<PlayerProvider>(context, listen: false)
+            .addLiability(liability);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Verbindlichkeit erfolgreich hinzugefügt!'),
@@ -93,7 +112,8 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Verbindlichkeit löschen'),
-        content: const Text('Möchtest du diese Verbindlichkeit wirklich löschen?'),
+        content:
+            const Text('Möchtest du diese Verbindlichkeit wirklich löschen?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -102,7 +122,8 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              Provider.of<PlayerProvider>(context, listen: false).deleteLiability(index);
+              Provider.of<PlayerProvider>(context, listen: false)
+                  .deleteLiability(index);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Verbindlichkeit erfolgreich gelöscht!'),
@@ -169,7 +190,8 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
                                     'Gesamtschulden:',
@@ -191,7 +213,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                               ),
                             ),
                           ),
-                          
+
                           // Liste der Verbindlichkeiten
                           Expanded(
                             child: ListView.builder(
@@ -199,23 +221,35 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                               itemBuilder: (context, index) {
                                 final liability = playerData.liabilities[index];
                                 return Card(
-                                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
                                   child: ListTile(
                                     title: Text(liability.name),
-                                    subtitle: Text(
-                                      'Schulden: ${liability.totalDebt} € | Monatliche Rate: ${liability.monthlyPayment} €',
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                            'Kategorie: ${liability.category}'),
+                                        Text(
+                                            'Schulden: ${liability.totalDebt} € | Monatliche Rate: ${liability.monthlyPayment} €'),
+                                      ],
                                     ),
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         IconButton(
-                                          icon: const Icon(Icons.edit, color: Colors.blue),
-                                          onPressed: () => _prepareForEditing(liability, index),
+                                          icon: const Icon(Icons.edit,
+                                              color: Colors.blue),
+                                          onPressed: () => _prepareForEditing(
+                                              liability, index),
                                           tooltip: 'Bearbeiten',
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.delete, color: Colors.red),
-                                          onPressed: () => _deleteLiability(index),
+                                          icon: const Icon(Icons.delete,
+                                              color: Colors.red),
+                                          onPressed: () =>
+                                              _deleteLiability(index),
                                           tooltip: 'Löschen',
                                         ),
                                       ],
@@ -240,9 +274,9 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          _editMode 
-                            ? 'Verbindlichkeit bearbeiten' 
-                            : 'Neue Verbindlichkeit hinzufügen',
+                          _editMode
+                              ? 'Verbindlichkeit bearbeiten'
+                              : 'Neue Verbindlichkeit hinzufügen',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -263,6 +297,34 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
+                        // Kategorieauswahl
+                        DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: 'Kategorie',
+                            border: OutlineInputBorder(),
+                          ),
+                          value: _selectedCategory,
+                          items: _categories
+                              .map((category) => DropdownMenuItem(
+                                    value: category,
+                                    child: Text(category),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedCategory = value;
+                              });
+                            }
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Bitte wähle eine Kategorie aus';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
                         TextFormField(
                           controller: _totalDebtController,
                           decoration: const InputDecoration(
@@ -270,7 +332,9 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                             border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Bitte gib die Gesamtschuld ein';
@@ -286,7 +350,9 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                             border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Bitte gib die monatliche Rate ein';
@@ -294,16 +360,21 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                             return null;
                           },
                         ),
+
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _saveLiability,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _editMode ? Colors.blue : Colors.red,
+                            backgroundColor:
+                                _editMode ? Colors.blue : Colors.red,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           child: Text(
-                            _editMode ? 'Verbindlichkeit aktualisieren' : 'Verbindlichkeit hinzufügen',
-                            style: const TextStyle(fontSize: 16, color: Colors.white),
+                            _editMode
+                                ? 'Verbindlichkeit aktualisieren'
+                                : 'Verbindlichkeit hinzufügen',
+                            style: const TextStyle(
+                                fontSize: 16, color: Colors.white),
                           ),
                         ),
                       ],
@@ -317,4 +388,4 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
       ),
     );
   }
-} 
+}

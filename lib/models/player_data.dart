@@ -11,6 +11,7 @@ class PlayerData {
   int cashflow;
   int savings;
   int netWorth; // Gesamtvermögen des Spielers
+  int costPerChild; // Kosten pro Kind
   List<Asset> assets;
   List<Liability> liabilities;
   List<Expense> expenses;
@@ -24,6 +25,7 @@ class PlayerData {
     required this.cashflow,
     this.savings = 0,
     this.netWorth = 0, // Standard-Initialwert
+    required this.costPerChild,
     List<Asset>? assets,
     List<Liability>? liabilities,
     List<Expense>? expenses,
@@ -231,6 +233,7 @@ class PlayerData {
       'cashflow': cashflow,
       'savings': savings,
       'netWorth': netWorth,
+      'costPerChild': costPerChild,
       'assets': assets.map((asset) => asset.toJson()).toList(),
       'liabilities':
           liabilities.map((liability) => liability.toJson()).toList(),
@@ -250,6 +253,8 @@ class PlayerData {
       savings: json['savings'] as int,
       netWorth: json['netWorth'] as int? ??
           0, // Fallback für alte Daten ohne netWorth
+      costPerChild:
+          json['costPerChild'] as int? ?? 0, // Fallback für alte Daten
       assets: (json['assets'] as List<dynamic>)
           .map((e) => Asset.fromJson(e as Map<String, dynamic>))
           .toList(),
