@@ -1,6 +1,8 @@
+import 'enums.dart';
+
 class Liability {
   String name;
-  String category;
+  LiabilityCategory category;
   int totalDebt;
   int monthlyPayment;
 
@@ -15,7 +17,7 @@ class Liability {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'category': category,
+      'category': category.toString(),
       'totalDebt': totalDebt,
       'monthlyPayment': monthlyPayment,
     };
@@ -25,10 +27,19 @@ class Liability {
   factory Liability.fromJson(Map<String, dynamic> json) {
     return Liability(
       name: json['name'] as String,
-      category: json['category'] as String? ??
-          'Sonstige', // Fallback für ältere Daten
+      category: LiabilityCategory.fromString(
+          json['category'] as String? ?? 'Sonstige'),
       totalDebt: json['totalDebt'] as int,
       monthlyPayment: json['monthlyPayment'] as int,
     );
   }
+
+  bool get isPropertyMortgage => category == LiabilityCategory.propertyMortgage;
+  bool get isHomeMortgage => category == LiabilityCategory.homeMortgage;
+  bool get isStudentLoan => category == LiabilityCategory.studentLoan;
+  bool get isCarLoan => category == LiabilityCategory.carLoan;
+  bool get isCreditCard => category == LiabilityCategory.creditCard;
+  bool get isConsumerDebt => category == LiabilityCategory.consumerDebt;
+  bool get isBusiness => category == LiabilityCategory.business;
+  bool get isBankLoan => category == LiabilityCategory.bankLoan;
 }

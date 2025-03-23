@@ -193,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 playerProvider.addAsset(Asset(
                   name: name,
                   cost: cost,
-                  category: 'Immobilien',
+                  category: AssetCategory.realEstate,
                   monthlyIncome: cashflow,
                   downPayment: downPayment,
                 ));
@@ -201,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Füge Hypothek hinzu
                 playerProvider.addLiability(Liability(
                   name: 'Hypothek: $name',
-                  category: 'Immobilien-Hypothek',
+                  category: LiabilityCategory.propertyMortgage,
                   totalDebt: mortgage,
                   monthlyPayment: monthlyPayment,
                 ));

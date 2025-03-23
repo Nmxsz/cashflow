@@ -1,6 +1,8 @@
+import 'enums.dart';
+
 class Asset {
   String name;
-  String category; // "Aktien/Fonds/CDs", "Immobilien", "Geschäfte"
+  AssetCategory category;
   int cost;
   int downPayment;
   int? monthlyIncome; // Optional für Aktien/Fonds/CDs
@@ -23,7 +25,7 @@ class Asset {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'category': category,
+      'category': category.toString(),
       'cost': cost,
       'downPayment': downPayment,
       'monthlyIncome': monthlyIncome,
@@ -36,8 +38,8 @@ class Asset {
   factory Asset.fromJson(Map<String, dynamic> json) {
     return Asset(
       name: json['name'] as String,
-      category: json['category'] as String? ??
-          'Aktien/Fonds/CDs', // Fallback für ältere Daten
+      category: AssetCategory.fromString(
+          json['category'] as String? ?? 'Aktien/Fonds/CDs'),
       cost: json['cost'] as int,
       downPayment: json['downPayment'] as int? ?? 0,
       monthlyIncome: json['monthlyIncome'] as int?, // Kann null sein
@@ -45,4 +47,8 @@ class Asset {
       costPerShare: json['costPerShare'] as int?,
     );
   }
+
+  bool get isStock => category == AssetCategory.stocks;
+  bool get isRealEstate => category == AssetCategory.realEstate;
+  bool get isBusiness => category == AssetCategory.business;
 }
