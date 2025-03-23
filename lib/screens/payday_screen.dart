@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/player_provider.dart';
 import '../models/liability.dart';
+import '../screens/home_screen.dart'; // Import für den homeScreenKey
 
 class PaydayScreen extends StatelessWidget {
   const PaydayScreen({Key? key}) : super(key: key);
@@ -21,30 +22,31 @@ class PaydayScreen extends StatelessWidget {
 
     // Berechne neue Werte nach dem Zahltag
     final newSavings = playerData.savings + playerData.cashflow;
-    
+
     // Simuliere die Reduzierung der Verbindlichkeiten
     int reducedDebtAmount = 0;
     int remainingLiabilitiesValue = 0;
-    
+
     // Berechne, wie viel Schulden durch die monatlichen Raten reduziert werden
     for (var liability in playerData.liabilities) {
       if (liability.totalDebt > liability.monthlyPayment) {
         // Normaler Fall: Es bleibt noch Schulden übrig
         reducedDebtAmount += liability.monthlyPayment;
-        remainingLiabilitiesValue += (liability.totalDebt - liability.monthlyPayment);
+        remainingLiabilitiesValue +=
+            (liability.totalDebt - liability.monthlyPayment);
       } else if (liability.totalDebt > 0) {
         // Wenn die Verbindlichkeit vollständig bezahlt wird
         reducedDebtAmount += liability.totalDebt;
         // Diese Verbindlichkeit wird nicht mehr zu den verbleibenden Schulden gezählt
       }
     }
-    
+
     // Berechne den Wert aller Vermögenswerte
     int assetsValue = 0;
     for (var asset in playerData.assets) {
       assetsValue += asset.cost;
     }
-    
+
     // Berechne das neue Nettovermögen unter Berücksichtigung der reduzierten Schulden
     final newNetWorth = newSavings + assetsValue - remainingLiabilitiesValue;
 
@@ -66,28 +68,33 @@ class PaydayScreen extends StatelessWidget {
                   children: [
                     const Text(
                       'Aktueller Kontostand',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       '${playerData.savings} €',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     const Divider(),
                     _buildInfoRow('Gehalt', '${playerData.salary} €'),
-                    _buildInfoRow('Passives Einkommen', '${playerData.passiveIncome} €'),
+                    _buildInfoRow(
+                        'Passives Einkommen', '${playerData.passiveIncome} €'),
                     _buildInfoRow('Ausgaben', '${playerData.totalExpenses} €'),
                     const Divider(),
                     _buildInfoRow(
                       'Cashflow',
                       '${playerData.cashflow} €',
-                      valueColor: playerData.cashflow >= 0 ? Colors.green : Colors.red,
+                      valueColor:
+                          playerData.cashflow >= 0 ? Colors.green : Colors.red,
                     ),
                     const Divider(),
                     _buildInfoRow(
                       'Gesamtvermögen',
                       '${playerData.netWorth} €',
-                      valueColor: playerData.netWorth >= 0 ? Colors.green : Colors.red,
+                      valueColor:
+                          playerData.netWorth >= 0 ? Colors.green : Colors.red,
                     ),
                   ],
                 ),
@@ -132,9 +139,9 @@ class PaydayScreen extends StatelessWidget {
               onPressed: () async {
                 // Zahltag durchführen
                 await playerProvider.processPayday();
-                
+
                 if (!context.mounted) return;
-                
+
                 // Erfolgsmeldung anzeigen
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -142,9 +149,19 @@ class PaydayScreen extends StatelessWidget {
                     backgroundColor: Colors.green,
                   ),
                 );
-                
+
                 // Zurück zum HomeScreen navigieren
                 Navigator.pop(context);
+
+                // Verzögerung, um sicherzustellen, dass die Navigation abgeschlossen ist
+                await Future.delayed(const Duration(milliseconds: 100));
+
+                // Scrolle den HomeScreen nach oben
+                homeScreenKey.currentState?.scrollController.animateTo(
+                  0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
@@ -162,7 +179,7 @@ class PaydayScreen extends StatelessWidget {
   }
 
   Widget _buildInfoRow(
-    String label, 
+    String label,
     String value, {
     Color? valueColor,
     double? valueFontSize,
@@ -192,4 +209,4 @@ class PaydayScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

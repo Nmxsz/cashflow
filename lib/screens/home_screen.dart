@@ -10,8 +10,24 @@ import 'liabilities_screen.dart';
 import 'expenses_screen.dart';
 import 'payday_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+// Global key für den Zugriff auf den HomeScreen-State
+final GlobalKey<_HomeScreenState> homeScreenKey = GlobalKey<_HomeScreenState>();
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final ScrollController scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
 
   void _handleMenuAction(BuildContext context, String action) {
     switch (action) {
@@ -112,6 +128,7 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           body: SingleChildScrollView(
+            controller: scrollController,
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

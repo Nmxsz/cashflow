@@ -44,7 +44,7 @@ class MainApp extends StatelessWidget {
               useMaterial3: true,
             ),
             themeMode: themeProvider.themeMode,
-            home: const HomeScreen(),
+            home: HomeScreen(key: homeScreenKey),
             debugShowCheckedModeBanner: false,
           );
         },
