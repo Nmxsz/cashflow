@@ -21,6 +21,21 @@ class ExpensesScreen extends StatelessWidget {
             );
           }
 
+          // Berechne die Gesamtausgaben aus allen Quellen
+          int totalMonthlyExpenses = 0;
+
+          // Addiere die monatlichen Zahlungen aus Verbindlichkeiten
+          for (var liability in playerData.liabilities) {
+            if (liability.category != 'Immobilien-Hypothek') {
+              totalMonthlyExpenses += liability.monthlyPayment;
+            }
+          }
+
+          // Addiere die sonstigen monatlichen Ausgaben
+          for (var expense in playerData.expenses) {
+            totalMonthlyExpenses += expense.amount;
+          }
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -41,26 +56,33 @@ class ExpensesScreen extends StatelessWidget {
                           ),
                         ),
                         const Divider(),
-                        _buildInfoRow('Monatliches Gehalt', '${playerData.salary} €'),
-                        _buildInfoRow('Passives Einkommen', '${playerData.passiveIncome} €'),
                         _buildInfoRow(
-                          'Monatliche Ausgaben', 
-                          '${playerData.totalExpenses} €',
+                            'Monatliches Gehalt', '${playerData.salary} €'),
+                        _buildInfoRow('Passives Einkommen',
+                            '${playerData.passiveIncome} €'),
+                        _buildInfoRow(
+                          'Monatliche Ausgaben',
+                          '$totalMonthlyExpenses €',
                           valueColor: Colors.red,
                         ),
                         const Divider(),
                         _buildInfoRow(
                           'Cashflow',
-                          '${playerData.cashflow} €',
-                          valueColor: playerData.cashflow >= 0 ? Colors.green : Colors.red,
+                          '${playerData.salary + playerData.passiveIncome - totalMonthlyExpenses} €',
+                          valueColor: (playerData.salary +
+                                      playerData.passiveIncome -
+                                      totalMonthlyExpenses) >=
+                                  0
+                              ? Colors.green
+                              : Colors.red,
                         ),
                       ],
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 const Text(
                   'Einzelne Ausgaben',
                   style: TextStyle(
@@ -68,9 +90,9 @@ class ExpensesScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // Liste der Verbindlichkeiten
                 if (playerData.liabilities.isNotEmpty) ...[
                   const Text(
@@ -81,15 +103,17 @@ class ExpensesScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  ...playerData.liabilities.map((liability) => _buildExpenseItem(
-                    liability.name,
-                    liability.monthlyPayment,
-                    Icons.trending_down,
-                    Colors.red,
-                  )).toList(),
+                  ...playerData.liabilities
+                      .map((liability) => _buildExpenseItem(
+                            liability.name,
+                            liability.monthlyPayment,
+                            Icons.trending_down,
+                            Colors.red,
+                          ))
+                      .toList(),
                   const SizedBox(height: 16),
                 ],
-                
+
                 // Liste der sonstigen Ausgaben
                 if (playerData.expenses.isNotEmpty) ...[
                   const Text(
@@ -100,15 +124,18 @@ class ExpensesScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  ...playerData.expenses.map((expense) => _buildExpenseItem(
-                    expense.name,
-                    expense.amount,
-                    Icons.money_off,
-                    Colors.orange,
-                  )).toList(),
+                  ...playerData.expenses
+                      .map((expense) => _buildExpenseItem(
+                            expense.name,
+                            expense.amount,
+                            Icons.money_off,
+                            Colors.orange,
+                          ))
+                      .toList(),
                 ],
-                
-                if (playerData.liabilities.isEmpty && playerData.expenses.isEmpty)
+
+                if (playerData.liabilities.isEmpty &&
+                    playerData.expenses.isEmpty)
                   const Center(
                     child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 32.0),
@@ -149,7 +176,8 @@ class ExpensesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildExpenseItem(String title, int amount, IconData icon, Color color) {
+  Widget _buildExpenseItem(
+      String title, int amount, IconData icon, Color color) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -165,4 +193,4 @@ class ExpensesScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}
