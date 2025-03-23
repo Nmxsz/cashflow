@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/player_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/home_screen.dart';
 
 void main() {
@@ -12,32 +13,41 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) {
-        final provider = PlayerProvider();
-        // Lade Spielerdaten beim Start
-        Future.microtask(() => provider.loadPlayerData());
-        return provider;
-      },
-      child: MaterialApp(
-        title: 'Cashflow Tracker',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) {
+            final provider = PlayerProvider();
+            // Lade Spielerdaten beim Start
+            Future.microtask(() => provider.loadPlayerData());
+            return provider;
+          },
         ),
-        darkTheme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
-        ),
-        themeMode: ThemeMode.system,
-        home: const HomeScreen(),
-        debugShowCheckedModeBanner: false,
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'Cashflow Tracker',
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.blue,
+                brightness: Brightness.light,
+              ),
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.blue,
+                brightness: Brightness.dark,
+              ),
+              useMaterial3: true,
+            ),
+            themeMode: themeProvider.themeMode,
+            home: const HomeScreen(),
+            debugShowCheckedModeBanner: false,
+          );
+        },
       ),
     );
   }

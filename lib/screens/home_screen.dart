@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/index.dart';
 import '../services/player_service.dart';
 import '../providers/player_provider.dart';
+import '../providers/theme_provider.dart';
 import 'profile_setup_screen.dart';
 import 'assets_screen.dart';
 import 'liabilities_screen.dart';
@@ -17,7 +18,7 @@ class HomeScreen extends StatelessWidget {
     return Consumer<PlayerProvider>(
       builder: (context, playerProvider, child) {
         final playerData = playerProvider.playerData;
-        
+
         if (playerData == null) {
           return Center(
             child: Column(
@@ -48,11 +49,28 @@ class HomeScreen extends StatelessWidget {
             ),
           );
         }
-        
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('Cashflow Tracker'),
             actions: [
+              IconButton(
+                icon: Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, child) {
+                    final isDark =
+                        Theme.of(context).brightness == Brightness.dark;
+                    return Icon(
+                      isDark ? Icons.light_mode : Icons.dark_mode,
+                      color: isDark ? Colors.yellow : Colors.grey[800],
+                    );
+                  },
+                ),
+                onPressed: () {
+                  Provider.of<ThemeProvider>(context, listen: false)
+                      .toggleTheme();
+                },
+                tooltip: 'Theme wechseln',
+              ),
               IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: () {
@@ -80,28 +98,36 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         Text(
                           playerData.name,
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           playerData.profession,
-                          style: const TextStyle(fontSize: 18, color: Colors.grey),
+                          style:
+                              const TextStyle(fontSize: 18, color: Colors.grey),
                         ),
                         const Divider(),
                         _buildInfoRow('Gehalt', '${playerData.salary} €'),
-                        _buildInfoRow('Passives Einkommen', '${playerData.passiveIncome} €'),
-                        _buildInfoRow('Ausgaben', '${playerData.totalExpenses} €'),
+                        _buildInfoRow('Passives Einkommen',
+                            '${playerData.passiveIncome} €'),
+                        _buildInfoRow(
+                            'Ausgaben', '${playerData.totalExpenses} €'),
                         const Divider(),
                         _buildInfoRow(
                           'Cashflow',
                           '${playerData.cashflow} €',
-                          valueColor: playerData.cashflow >= 0 ? Colors.green : Colors.red,
+                          valueColor: playerData.cashflow >= 0
+                              ? Colors.green
+                              : Colors.red,
                         ),
                         _buildInfoRow('Ersparnis', '${playerData.savings} €'),
                         const Divider(),
                         _buildInfoRow(
                           'Gesamtvermögen',
                           '${playerData.netWorth} €',
-                          valueColor: playerData.netWorth >= 0 ? Colors.green : Colors.red,
+                          valueColor: playerData.netWorth >= 0
+                              ? Colors.green
+                              : Colors.red,
                           valueFontSize: 18.0,
                           labelFontWeight: FontWeight.bold,
                         ),
@@ -109,9 +135,9 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Aktionen
                 GridView.count(
                   shrinkWrap: true,
@@ -128,7 +154,8 @@ class HomeScreen extends StatelessWidget {
                       Colors.green,
                       () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const AssetsScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const AssetsScreen()),
                       ),
                     ),
                     _buildActionCard(
@@ -138,7 +165,8 @@ class HomeScreen extends StatelessWidget {
                       Colors.red,
                       () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LiabilitiesScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const LiabilitiesScreen()),
                       ),
                     ),
                     _buildActionCard(
@@ -148,7 +176,8 @@ class HomeScreen extends StatelessWidget {
                       Colors.orange,
                       () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const ExpensesScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const ExpensesScreen()),
                       ),
                     ),
                     _buildActionCard(
@@ -158,7 +187,8 @@ class HomeScreen extends StatelessWidget {
                       Colors.blue,
                       () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const PaydayScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const PaydayScreen()),
                       ),
                     ),
                   ],
@@ -170,9 +200,9 @@ class HomeScreen extends StatelessWidget {
       },
     );
   }
-  
+
   Widget _buildInfoRow(
-    String label, 
+    String label,
     String value, {
     Color? valueColor,
     double? valueFontSize,
@@ -202,7 +232,7 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildActionCard(
     BuildContext context,
     String title,
@@ -235,4 +265,4 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}
