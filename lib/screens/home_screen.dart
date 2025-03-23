@@ -10,6 +10,7 @@ import 'assets_screen.dart';
 import 'liabilities_screen.dart';
 import 'expenses_screen.dart';
 import 'payday_screen.dart';
+import 'multiplayer_room_screen.dart';
 
 // Global key für den Zugriff auf den HomeScreen-State
 final GlobalKey<_HomeScreenState> homeScreenKey = GlobalKey<_HomeScreenState>();
@@ -629,6 +630,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         context,
                         MaterialPageRoute(
                             builder: (context) => const PaydayScreen()),
+                      ),
+                    ),
+                    _buildActionCard(
+                      context,
+                      'Multiplayer',
+                      Icons.group,
+                      Colors.purple,
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                const MultiplayerRoomScreen()),
                       ),
                     ),
                   ],

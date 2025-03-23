@@ -5,6 +5,7 @@ void main() {
   group('PlayerData', () {
     test('should create PlayerData with default values', () {
       final playerData = PlayerData(
+        id: 'uuid.v4()',
         name: 'Test Player',
         profession: 'Test Profession',
         salary: 0,
@@ -26,6 +27,7 @@ void main() {
 
     test('should correctly calculate net worth', () {
       final playerData = PlayerData(
+        id: 'uuid.v4()',
         name: 'Test Player',
         profession: 'Test Profession',
         salary: 0,
@@ -47,14 +49,13 @@ void main() {
           monthlyPayment: 100,
         ));
 
-      playerData.calculateNetWorth();
-
       // NetWorth = Savings + Asset Values - Total Liabilities
       expect(playerData.netWorth, 1000 + 5000 - 2000);
     });
 
     test('should process payday correctly', () {
       final playerData = PlayerData(
+        id: 'uuid.v4()',
         name: 'Test Player',
         profession: 'Test Profession',
         salary: 2000,
@@ -65,7 +66,7 @@ void main() {
         ..passiveIncome = 500
         ..savings = 1000;
 
-      playerData.payday();
+      playerData.processPayday();
 
       // After payday, savings should increase by (salary + passive income - expenses)
       expect(playerData.savings, 1000 + (2000 + 500 - 1500));
@@ -74,6 +75,7 @@ void main() {
 
     test('should convert to and from JSON', () {
       final originalData = PlayerData(
+        id: 'uuid.v4()',
         name: 'Test Player',
         profession: 'Test Profession',
         salary: 2000,
@@ -83,7 +85,6 @@ void main() {
       )
         ..savings = 5000
         ..passiveIncome = 500
-        ..netWorth = 10000
         ..assets.add(Asset(
           name: 'Test Asset',
           category: AssetCategory.realEstate,

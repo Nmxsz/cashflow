@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/player_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/multiplayer_provider.dart';
 import 'screens/home_screen.dart';
 
 void main() {
@@ -24,6 +25,7 @@ class MainApp extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => MultiplayerProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

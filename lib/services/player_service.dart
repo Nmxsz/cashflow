@@ -71,7 +71,7 @@ class PlayerService {
     }
 
     // Normaler Zahltag-Prozess
-    playerData.payday();
+    playerData.processPayday();
     await savePlayerData(playerData);
     return playerData;
   }
@@ -145,14 +145,15 @@ class PlayerService {
   // Aktualisiert einen bestehenden Vermögenswert
   Future<PlayerData> updateAsset(
       PlayerData playerData, int index, Asset updatedAsset) async {
-    playerData.updateAsset(index, updatedAsset);
+    playerData.assets[index] = updatedAsset;
+    playerData.updateCashflow();
     await savePlayerData(playerData);
     return playerData;
   }
 
   // Löscht einen Vermögenswert
   Future<PlayerData> deleteAsset(PlayerData playerData, int index) async {
-    playerData.deleteAsset(index);
+    playerData.removeAsset(playerData.assets[index]);
     await savePlayerData(playerData);
     return playerData;
   }
@@ -160,14 +161,15 @@ class PlayerService {
   // Aktualisiert eine bestehende Verbindlichkeit
   Future<PlayerData> updateLiability(
       PlayerData playerData, int index, Liability updatedLiability) async {
-    playerData.updateLiability(index, updatedLiability);
+    playerData.liabilities[index] = updatedLiability;
+    playerData.updateCashflow();
     await savePlayerData(playerData);
     return playerData;
   }
 
   // Löscht eine Verbindlichkeit
   Future<PlayerData> deleteLiability(PlayerData playerData, int index) async {
-    playerData.deleteLiability(index);
+    playerData.removeLiability(playerData.liabilities[index]);
     await savePlayerData(playerData);
     return playerData;
   }
@@ -195,7 +197,7 @@ class PlayerService {
     // Berechne den tatsächlichen Gewinn basierend auf der Asset-Kategorie
     int profit = sellPrice;
 
-    if (asset.category == 'Immobilien') {
+    if (asset.category == AssetCategory.realEstate) {
       // Bei Immobilien: Verkaufspreis minus verbleibende Hypothek
       final mortgageIndex = playerData.liabilities.indexWhere(
         (liability) => liability.name == 'Hypothek: ${asset.name}',
@@ -219,17 +221,14 @@ class PlayerService {
     // Aktualisiere die Ersparnisse:
     // Bei Immobilien: Anzahlung + Gewinn
     // Bei anderen Assets: Verkaufspreis
-    if (asset.category == 'Immobilien') {
+    if (asset.category == AssetCategory.realEstate) {
       playerData.savings += asset.downPayment + profit;
     } else {
       playerData.savings += sellPrice;
     }
 
     // Entferne das Asset aus der Liste
-    playerData.assets.removeAt(index);
-
-    // Berechne das neue Nettovermögen
-    playerData.calculateNetWorth();
+    playerData.removeAsset(asset);
 
     await savePlayerData(playerData);
     return playerData;

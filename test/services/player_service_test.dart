@@ -16,6 +16,7 @@ void main() {
 
     test('should save and load player data', () async {
       final playerData = PlayerData(
+        id: 'uuid.v4()',
         name: 'Test Player',
         profession: 'Test Profession',
         salary: 2000,
@@ -33,6 +34,7 @@ void main() {
 
     test('should process payday correctly', () async {
       final playerData = PlayerData(
+        id: 'uuid.v4()',
         name: 'Test Player',
         profession: 'Test Profession',
         salary: 2000,
@@ -51,6 +53,7 @@ void main() {
 
     test('should add asset and update savings', () async {
       final playerData = PlayerData(
+        id: 'uuid.v4()',
         name: 'Test Player',
         profession: 'Test Profession',
         salary: 0,
@@ -75,6 +78,7 @@ void main() {
     test('should add liability without expense for property mortgage',
         () async {
       final playerData = PlayerData(
+        id: 'uuid.v4()',
         name: 'Test Player',
         profession: 'Test Profession',
         salary: 0,
@@ -100,6 +104,7 @@ void main() {
 
     test('should add liability with expense for other types', () async {
       final playerData = PlayerData(
+        id: 'uuid.v4()',
         name: 'Test Player',
         profession: 'Test Profession',
         salary: 3000,
@@ -125,7 +130,8 @@ void main() {
     });
 
     test('should sell asset and calculate profit correctly', () async {
-      final playerData = PlayerData(
+        final playerData = PlayerData(
+        id: 'uuid.v4()',
         name: 'Test Player',
         profession: 'Test Profession',
         salary: 0,
@@ -160,6 +166,7 @@ void main() {
 
     test('should reduce mortgage on payday', () async {
       final playerData = PlayerData(
+        id: 'uuid.v4()',
         name: 'Test Player',
         profession: 'Test Profession',
         salary: 0,

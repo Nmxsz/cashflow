@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/index.dart';
 import '../providers/player_provider.dart';
+import 'package:uuid/uuid.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({Key? key}) : super(key: key);
@@ -238,7 +239,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       final int totalSavings = initialSavings + monthlyCashflow;
 
       // Erstelle Spielerdaten
+      var uuid = Uuid();
       final playerData = PlayerData(
+        id: uuid.v4(),
         name: _nameController.text,
         profession: _professionController.text,
         salary: salary,

@@ -122,9 +122,6 @@ class PlayerProvider extends ChangeNotifier {
       if (totalExpenses != null) _playerData!.totalExpenses = totalExpenses;
       if (cashflow != null) _playerData!.cashflow = cashflow;
 
-      // Berechne das neue Nettovermögen
-      _playerData!.calculateNetWorth();
-
       await _playerService.savePlayerData(_playerData!);
       notifyListeners();
     }
