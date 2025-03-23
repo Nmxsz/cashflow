@@ -15,9 +15,14 @@ void main() {
     });
 
     test('should save and load player data', () async {
-      final playerData = PlayerData()
-        ..salary = 2000
-        ..savings = 5000;
+      final playerData = PlayerData(
+        name: 'Test Player',
+        profession: 'Test Profession',
+        salary: 2000,
+        totalExpenses: 0,
+        cashflow: 0,
+        costPerChild: 0,
+      )..savings = 5000;
 
       await playerService.savePlayerData(playerData);
       final loadedData = await playerService.loadPlayerData();
@@ -27,10 +32,15 @@ void main() {
     });
 
     test('should process payday correctly', () async {
-      final playerData = PlayerData()
-        ..salary = 2000
+      final playerData = PlayerData(
+        name: 'Test Player',
+        profession: 'Test Profession',
+        salary: 2000,
+        totalExpenses: 1500,
+        cashflow: 1000,
+        costPerChild: 0,
+      )
         ..passiveIncome = 500
-        ..totalExpenses = 1500
         ..savings = 1000;
 
       final updatedData = await playerService.processPayday(playerData);
@@ -40,11 +50,18 @@ void main() {
     });
 
     test('should add asset and update savings', () async {
-      final playerData = PlayerData()..savings = 10000;
+      final playerData = PlayerData(
+        name: 'Test Player',
+        profession: 'Test Profession',
+        salary: 0,
+        totalExpenses: 0,
+        cashflow: 0,
+        costPerChild: 0,
+      )..savings = 10000;
 
       final asset = Asset(
         name: 'Test Property',
-        category: 'Immobilien',
+        category: AssetCategory.realEstate,
         cost: 50000,
         downPayment: 5000,
       );
@@ -57,13 +74,18 @@ void main() {
 
     test('should add liability without expense for property mortgage',
         () async {
-      final playerData = PlayerData()
-        ..totalExpenses = 1000
-        ..cashflow = 1000;
+      final playerData = PlayerData(
+        name: 'Test Player',
+        profession: 'Test Profession',
+        salary: 0,
+        totalExpenses: 1000,
+        cashflow: 1000,
+        costPerChild: 0,
+      );
 
       final mortgage = Liability(
         name: 'Hypothek: Test Property',
-        category: 'Immobilien-Hypothek',
+        category: LiabilityCategory.propertyMortgage,
         totalDebt: 45000,
         monthlyPayment: 0,
       );
@@ -77,14 +99,18 @@ void main() {
     });
 
     test('should add liability with expense for other types', () async {
-      final playerData = PlayerData()
-        ..totalExpenses = 1000
-        ..cashflow = 2000
-        ..salary = 3000;
+      final playerData = PlayerData(
+        name: 'Test Player',
+        profession: 'Test Profession',
+        salary: 3000,
+        totalExpenses: 1000,
+        cashflow: 2000,
+        costPerChild: 0,
+      );
 
       final liability = Liability(
         name: 'Test Loan',
-        category: 'Bankdarlehen',
+        category: LiabilityCategory.bankLoan,
         totalDebt: 5000,
         monthlyPayment: 100,
       );
@@ -99,12 +125,18 @@ void main() {
     });
 
     test('should sell asset and calculate profit correctly', () async {
-      final playerData = PlayerData()..savings = 5000;
+      final playerData = PlayerData(
+        name: 'Test Player',
+        profession: 'Test Profession',
+        salary: 0,
+        totalExpenses: 0,
+        cashflow: 0,
+        costPerChild: 0,
+      )..savings = 5000;
 
-      // Add an asset and its mortgage
       final asset = Asset(
         name: 'Test Property',
-        category: 'Immobilien',
+        category: AssetCategory.realEstate,
         cost: 50000,
         downPayment: 5000,
       );
@@ -112,16 +144,14 @@ void main() {
 
       final mortgage = Liability(
         name: 'Hypothek: Test Property',
-        category: 'Immobilien-Hypothek',
+        category: LiabilityCategory.propertyMortgage,
         totalDebt: 45000,
         monthlyPayment: 0,
       );
       playerData.liabilities.add(mortgage);
 
-      // Sell the asset for 60000
       final updatedData = await playerService.sellAsset(playerData, 0, 60000);
 
-      // Profit calculation: 60000 (sell price) - 45000 (mortgage) - 5000 (down payment) = 10000
       expect(updatedData.savings,
           15000); // 5000 + 5000 (down payment) + 10000 (profit)
       expect(updatedData.assets.isEmpty, true);
@@ -129,12 +159,18 @@ void main() {
     });
 
     test('should reduce mortgage on payday', () async {
-      final playerData = PlayerData();
+      final playerData = PlayerData(
+        name: 'Test Player',
+        profession: 'Test Profession',
+        salary: 0,
+        totalExpenses: 0,
+        cashflow: 0,
+        costPerChild: 0,
+      );
 
-      // Add a property and its mortgage
       final asset = Asset(
         name: 'Test Property',
-        category: 'Immobilien',
+        category: AssetCategory.realEstate,
         cost: 50000,
         downPayment: 5000,
       );
@@ -142,16 +178,14 @@ void main() {
 
       final mortgage = Liability(
         name: 'Hypothek: Test Property',
-        category: 'Immobilien-Hypothek',
+        category: LiabilityCategory.propertyMortgage,
         totalDebt: 45000,
         monthlyPayment: 0,
       );
       playerData.liabilities.add(mortgage);
 
-      // Process payday
       final updatedData = await playerService.processPayday(playerData);
 
-      // Monthly payment should be 1% of original mortgage (45000)
       expect(updatedData.liabilities[0].totalDebt,
           44550); // 45000 - (45000 * 0.01)
     });

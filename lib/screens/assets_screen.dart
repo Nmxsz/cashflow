@@ -22,12 +22,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
   final TextEditingController _costPerShareController = TextEditingController();
 
   // Kategorien für Assets
-  final List<String> _categories = [
-    'Aktien/Fonds/CDs',
-    'Immobilien',
-    'Geschäfte'
-  ];
-  String _selectedCategory = 'Aktien/Fonds/CDs';
+  final List<AssetCategory> _categories = AssetCategory.values;
+  AssetCategory _selectedCategory = AssetCategory.stocks;
 
   // Flag, ob wir im Bearbeitungsmodus sind
   bool _editMode = false;
@@ -55,7 +51,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
       _monthlyIncomeController.clear();
       _sharesController.clear();
       _costPerShareController.clear();
-      _selectedCategory = 'Aktien/Fonds/CDs';
+      _selectedCategory = AssetCategory.stocks;
     });
   }
 
@@ -92,7 +88,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
 
   // Berechnet die Kosten basierend auf der Kategorie und den Eingaben
   void _calculateCost() {
-    if (_selectedCategory == 'Aktien/Fonds/CDs') {
+    if (_selectedCategory == AssetCategory.stocks) {
       // Für Aktien: Kosten = Anzahl der Anteile * Kosten pro Anteil
       final shares = int.tryParse(_sharesController.text) ?? 0;
       final costPerShare = int.tryParse(_costPerShareController.text) ?? 0;
@@ -108,7 +104,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
       // Erstelle das Asset-Objekt basierend auf der Kategorie
       Asset asset;
 
-      if (_selectedCategory == 'Aktien/Fonds/CDs') {
+      if (_selectedCategory == AssetCategory.stocks) {
         final shares = int.tryParse(_sharesController.text) ?? 0;
         final costPerShare = int.tryParse(_costPerShareController.text) ?? 0;
 
@@ -201,7 +197,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
   // Verkauft ein Asset und erhält den Erlös
   void _sellAsset(int index, Asset asset) {
     // Unterschiedliche Dialoge je nach Kategorie
-    if (asset.category == 'Aktien/Fonds/CDs' &&
+    if (asset.category == AssetCategory.stocks &&
         asset.shares != null &&
         asset.costPerShare != null) {
       // Für Aktien/Fonds/CDs: Verkaufspreis pro Anteil eingeben
@@ -332,7 +328,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
         sellPricePerShareController.dispose();
         totalSellPriceNotifier.dispose();
       });
-    } else if (asset.category == 'Immobilien') {
+    } else if (asset.category == AssetCategory.realEstate) {
       // Für Immobilien: Verkaufspreis eingeben und Hypothek berücksichtigen
       final TextEditingController sellPriceController =
           TextEditingController(text: asset.cost.toString());
@@ -517,7 +513,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
 
   // Baut die kategorieabhängigen Formularfelder
   Widget _buildCategorySpecificFields() {
-    if (_selectedCategory == 'Aktien/Fonds/CDs') {
+    if (_selectedCategory == AssetCategory.stocks) {
       return Column(
         children: [
           const SizedBox(height: 12),
@@ -714,23 +710,23 @@ class _AssetsScreenState extends State<AssetsScreen> {
                                       children: [
                                         Text('Kategorie: ${asset.category}'),
                                         if (asset.category ==
-                                                'Aktien/Fonds/CDs' &&
+                                                AssetCategory.stocks &&
                                             asset.shares != null &&
                                             asset.costPerShare != null)
                                           Text(
                                               '${asset.shares} Anteile zu je ${asset.costPerShare} € (Gesamt: ${asset.cost} €)'),
                                         if (asset.category ==
-                                                'Aktien/Fonds/CDs' &&
+                                                AssetCategory.stocks &&
                                             (asset.shares == null ||
                                                 asset.costPerShare == null))
                                           Text('Gesamtwert: ${asset.cost} €'),
                                         if (asset.category !=
-                                            'Aktien/Fonds/CDs')
+                                            AssetCategory.stocks)
                                           Text(
                                               'Kosten: ${asset.cost} € | Einkommen: ${asset.monthlyIncome} €'),
                                         // Weitere kategoriespezifische Informationen
                                         if (asset.category !=
-                                                'Aktien/Fonds/CDs' &&
+                                                AssetCategory.stocks &&
                                             asset.downPayment > 0)
                                           Text(
                                               'Anzahlung: ${asset.downPayment} €'),
@@ -806,7 +802,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                         ),
                         const SizedBox(height: 12),
                         // Kategorieauswahl
-                        DropdownButtonFormField<String>(
+                        DropdownButtonFormField<AssetCategory>(
                           decoration: const InputDecoration(
                             labelText: 'Kategorie',
                             border: OutlineInputBorder(),
@@ -815,7 +811,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                           items: _categories
                               .map((category) => DropdownMenuItem(
                                     value: category,
-                                    child: Text(category),
+                                    child: Text(category.toString()),
                                   ))
                               .toList(),
                           onChanged: (value) {
@@ -823,7 +819,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
                               setState(() {
                                 _selectedCategory = value;
                                 // Zurücksetzen der spezifischen Felder
-                                if (_selectedCategory == 'Aktien/Fonds/CDs') {
+                                if (_selectedCategory == AssetCategory.stocks) {
                                   _downPaymentController.text = '0';
                                   _monthlyIncomeController.text = '0';
                                 } else {

@@ -19,18 +19,8 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
       TextEditingController();
 
   // Kategorien für Verbindlichkeiten
-  final List<String> _categories = [
-    'Eigenheim-Hypothek',
-    'BAföG-Darlehen',
-    'Autokredite',
-    'Kreditkarten',
-    'Verbraucherkreditschulden',
-    'Immobilien-Hypothek',
-    'Geschäfte',
-    'Bankdarlehen',
-    'Sonstige'
-  ];
-  String _selectedCategory = 'Sonstige';
+  final List<LiabilityCategory> _categories = LiabilityCategory.values;
+  LiabilityCategory _selectedCategory = LiabilityCategory.other;
 
   // Flag, ob wir im Bearbeitungsmodus sind
   bool _editMode = false;
@@ -52,7 +42,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
       _nameController.clear();
       _totalDebtController.clear();
       _monthlyPaymentController.clear();
-      _selectedCategory = 'Sonstige';
+      _selectedCategory = LiabilityCategory.other;
     });
   }
 
@@ -76,7 +66,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
         name: _nameController.text,
         category: _selectedCategory,
         totalDebt: int.parse(_totalDebtController.text),
-        monthlyPayment: _selectedCategory == 'Immobilien-Hypothek'
+        monthlyPayment: _selectedCategory == LiabilityCategory.propertyMortgage
             ? 0 // Keine monatliche Rate für Immobilien-Hypotheken
             : int.parse(_monthlyPaymentController.text),
       );
@@ -179,12 +169,12 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
             Text('Gesamtschuld: ${liability.totalDebt} €'),
             Text('Monatliche Rate: ${liability.monthlyPayment} €'),
             const SizedBox(height: 12),
-            if (liability.category == 'Bankdarlehen')
+            if (liability.category == LiabilityCategory.bankLoan)
               const Text(
                 'Hinweis: Bankdarlehen können nur teilweise abgezahlt werden.',
                 style: TextStyle(color: Colors.orange),
               ),
-            if (liability.category == 'Eigenheim-Hypothek')
+            if (liability.category == LiabilityCategory.homeMortgage)
               const Text(
                 'Hinweis: Die monatliche Rate wird von den Ausgaben abgezogen.',
                 style: TextStyle(color: Colors.blue),
@@ -205,19 +195,21 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
 
               // Berechne die neuen Ausgaben, aber nur für nicht-Immobilien-Hypotheken
               int newTotalExpenses = playerData.totalExpenses;
-              if (liability.category != 'Immobilien-Hypothek') {
+              if (liability.category != LiabilityCategory.propertyMortgage) {
                 // Finde die entsprechende Ausgabe
                 final expenseIndex = playerData.expenses.indexWhere((expense) {
-                  if (liability.category == 'Eigenheim-Hypothek') {
+                  if (liability.category == LiabilityCategory.homeMortgage) {
                     return expense.type == ExpenseType.homePayment;
-                  } else if (liability.category == 'BAföG-Darlehen') {
+                  } else if (liability.category ==
+                      LiabilityCategory.studentLoan) {
                     return expense.type == ExpenseType.schoolLoan;
-                  } else if (liability.category == 'Autokredite') {
+                  } else if (liability.category == LiabilityCategory.carLoan) {
                     return expense.type == ExpenseType.carLoan;
-                  } else if (liability.category == 'Kreditkarten') {
+                  } else if (liability.category ==
+                      LiabilityCategory.creditCard) {
                     return expense.type == ExpenseType.creditCard;
                   } else if (liability.category ==
-                      'Verbraucherkreditschulden') {
+                      LiabilityCategory.consumerDebt) {
                     return expense.type == ExpenseType.retail;
                   }
                   return false;
@@ -225,7 +217,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
 
                 if (expenseIndex != -1) {
                   final expense = playerData.expenses[expenseIndex];
-                  if (liability.category == 'Eigenheim-Hypothek') {
+                  if (liability.category == LiabilityCategory.homeMortgage) {
                     // Bei Hypotheken: Reduziere nur die Rate
                     final newAmount = expense.amount - liability.monthlyPayment;
                     if (newAmount > 0) {
@@ -258,7 +250,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                   playerData.passiveIncome -
                   newTotalExpenses;
 
-              if (liability.category == 'Bankdarlehen') {
+              if (liability.category == LiabilityCategory.bankLoan) {
                 // Bei Bankdarlehen: Reduziere die Gesamtschuld und monatliche Rate
                 final reducedDebt =
                     liability.totalDebt ~/ 2; // Reduziere um die Hälfte
@@ -469,7 +461,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                         ),
                         const SizedBox(height: 12),
                         // Kategorieauswahl
-                        DropdownButtonFormField<String>(
+                        DropdownButtonFormField<LiabilityCategory>(
                           decoration: const InputDecoration(
                             labelText: 'Kategorie',
                             border: OutlineInputBorder(),
@@ -478,7 +470,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                           items: _categories
                               .map((category) => DropdownMenuItem(
                                     value: category,
-                                    child: Text(category),
+                                    child: Text(category.toString()),
                                   ))
                               .toList(),
                           onChanged: (value) {
@@ -489,7 +481,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                             }
                           },
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
+                            if (value == null) {
                               return 'Bitte wähle eine Kategorie aus';
                             }
                             return null;
@@ -514,7 +506,8 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
-                        if (_selectedCategory != 'Immobilien-Hypothek')
+                        if (_selectedCategory !=
+                            LiabilityCategory.propertyMortgage)
                           TextFormField(
                             controller: _monthlyPaymentController,
                             decoration: const InputDecoration(
@@ -532,12 +525,13 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                               return null;
                             },
                           ),
-                        if (_selectedCategory == 'Immobilien-Hypothek')
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        if (_selectedCategory ==
+                            LiabilityCategory.propertyMortgage)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8.0),
                             child: Text(
                               'Monatliche Rate: 0 € (Rate ist bereits im Cashflow der Immobilie berücksichtigt)',
-                              style: const TextStyle(color: Colors.grey),
+                              style: TextStyle(color: Colors.grey),
                             ),
                           ),
 

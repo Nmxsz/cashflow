@@ -33,10 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleMenuAction(BuildContext context, String action) {
     switch (action) {
       case 'credit':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const LiabilitiesScreen()),
-        );
+        _showBankLoanDialog(context);
         break;
       case 'buy_property':
         _showBuyPropertyDialog(context);
@@ -310,6 +307,114 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showBankLoanDialog(BuildContext context) {
+    final _formKey = GlobalKey<FormState>();
+    final _amountController = TextEditingController();
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    final isBankrupt = playerProvider.playerData!.cashflow < 0;
+
+    if (isBankrupt) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Du bist bankrott und kannst kein Darlehen aufnehmen!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Bankdarlehen aufnehmen'),
+        content: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _amountController,
+                decoration: const InputDecoration(
+                  labelText: 'Darlehensbetrag (€)',
+                  border: OutlineInputBorder(),
+                  helperText: 'Nur in 1.000€ Schritten möglich',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Bitte geben Sie einen Betrag ein';
+                  }
+                  final amount = int.parse(value);
+                  if (amount <= 0) {
+                    return 'Der Betrag muss größer als 0 sein';
+                  }
+                  if (amount % 1000 != 0) {
+                    return 'Der Betrag muss in 1.000€ Schritten sein';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Konditionen:\n'
+                '• 10% Zinsen pro Monat\n'
+                '• €100 monatliche Rate pro geliehene €1.000',
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (_formKey.currentState?.validate() ?? false) {
+                final amount = int.parse(_amountController.text);
+                final monthlyPayment = (amount ~/ 1000) * 100;
+                final monthlyInterest = (amount * 0.10).round(); // 10% Zinsen
+
+                // Füge Darlehen hinzu
+                playerProvider.addLiability(Liability(
+                  name: 'Bankdarlehen: €$amount',
+                  category: LiabilityCategory.bankLoan,
+                  totalDebt: amount,
+                  monthlyPayment: monthlyPayment,
+                ));
+
+                // Füge Zinskosten als Ausgabe hinzu
+                playerProvider.addExpense(Expense(
+                  name: 'Zinsen für Bankdarlehen: €$amount',
+                  amount: monthlyInterest,
+                  type: ExpenseType.other,
+                ));
+
+                // Aktualisiere Ersparnisse
+                final currentSavings = playerProvider.playerData!.savings;
+                playerProvider.updatePlayerStats(
+                  savings: currentSavings + amount,
+                );
+
+                Navigator.of(context).pop();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Bankdarlehen über €$amount aufgenommen'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            child: const Text('Aufnehmen'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PlayerProvider>(
@@ -352,6 +457,16 @@ class _HomeScreenState extends State<HomeScreen> {
             title: const Text('Cashflow Tracker'),
             actions: [
               IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () {
+                  playerProvider.resetPlayerData();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Profil zurückgesetzt')),
+                  );
+                },
+                tooltip: 'Neues Spiel',
+              ),
+              IconButton(
                 icon: Consumer<ThemeProvider>(
                   builder: (context, themeProvider, child) {
                     final isDark =
@@ -368,16 +483,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 tooltip: 'Theme wechseln',
               ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () {
-                  playerProvider.resetPlayerData();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Profil zurückgesetzt')),
-                  );
-                },
-                tooltip: 'Profil zurücksetzen',
-              ),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
                 tooltip: 'Menü öffnen',
@@ -389,7 +494,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Icon(Icons.credit_card),
                         SizedBox(width: 8),
-                        Text('Kredit'),
+                        Text('Kredit aufnehmen'),
                       ],
                     ),
                   ),

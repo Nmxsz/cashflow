@@ -39,10 +39,25 @@ class PlayerProvider extends ChangeNotifier {
 
   // Fügt eine neue Verbindlichkeit hinzu
   Future<void> addLiability(Liability liability) async {
-    if (_playerData != null) {
-      _playerData = await _playerService.addLiability(_playerData!, liability);
-      notifyListeners();
-    }
+    if (playerData == null) return;
+
+    playerData!.liabilities.add(liability);
+    await _playerService.savePlayerData(playerData!);
+    notifyListeners();
+  }
+
+  // Fügt eine neue Ausgabe hinzu
+  Future<void> addExpense(Expense expense) async {
+    if (playerData == null) return;
+
+    playerData!.expenses.add(expense);
+    playerData!.totalExpenses += expense.amount;
+    playerData!.cashflow = playerData!.salary +
+        playerData!.passiveIncome -
+        playerData!.totalExpenses;
+
+    await _playerService.savePlayerData(playerData!);
+    notifyListeners();
   }
 
   // Verarbeitet einen Zahltag

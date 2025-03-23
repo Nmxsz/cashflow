@@ -4,7 +4,14 @@ import 'package:cashflow/models/index.dart';
 void main() {
   group('PlayerData', () {
     test('should create PlayerData with default values', () {
-      final playerData = PlayerData();
+      final playerData = PlayerData(
+        name: 'Test Player',
+        profession: 'Test Profession',
+        salary: 0,
+        totalExpenses: 0,
+        cashflow: 0,
+        costPerChild: 0,
+      );
 
       expect(playerData.salary, 0);
       expect(playerData.savings, 0);
@@ -18,17 +25,24 @@ void main() {
     });
 
     test('should correctly calculate net worth', () {
-      final playerData = PlayerData()
+      final playerData = PlayerData(
+        name: 'Test Player',
+        profession: 'Test Profession',
+        salary: 0,
+        totalExpenses: 0,
+        cashflow: 0,
+        costPerChild: 0,
+      )
         ..savings = 1000
         ..assets.add(Asset(
           name: 'Test Asset',
-          category: 'Immobilien',
+          category: AssetCategory.realEstate,
           cost: 5000,
           downPayment: 1000,
         ))
         ..liabilities.add(Liability(
           name: 'Test Liability',
-          category: 'Bankdarlehen',
+          category: LiabilityCategory.bankLoan,
           totalDebt: 2000,
           monthlyPayment: 100,
         ));
@@ -40,10 +54,15 @@ void main() {
     });
 
     test('should process payday correctly', () {
-      final playerData = PlayerData()
-        ..salary = 2000
+      final playerData = PlayerData(
+        name: 'Test Player',
+        profession: 'Test Profession',
+        salary: 2000,
+        totalExpenses: 1500,
+        cashflow: 1000,
+        costPerChild: 0,
+      )
         ..passiveIncome = 500
-        ..totalExpenses = 1500
         ..savings = 1000;
 
       playerData.payday();
@@ -54,22 +73,26 @@ void main() {
     });
 
     test('should convert to and from JSON', () {
-      final originalData = PlayerData()
-        ..salary = 2000
+      final originalData = PlayerData(
+        name: 'Test Player',
+        profession: 'Test Profession',
+        salary: 2000,
+        totalExpenses: 1500,
+        cashflow: 1000,
+        costPerChild: 0,
+      )
         ..savings = 5000
         ..passiveIncome = 500
-        ..totalExpenses = 1500
-        ..cashflow = 1000
         ..netWorth = 10000
         ..assets.add(Asset(
           name: 'Test Asset',
-          category: 'Immobilien',
+          category: AssetCategory.realEstate,
           cost: 5000,
           downPayment: 1000,
         ))
         ..liabilities.add(Liability(
           name: 'Test Liability',
-          category: 'Bankdarlehen',
+          category: LiabilityCategory.bankLoan,
           totalDebt: 2000,
           monthlyPayment: 100,
         ))

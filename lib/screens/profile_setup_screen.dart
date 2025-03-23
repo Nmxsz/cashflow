@@ -26,15 +26,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final TextEditingController _realEstateController = TextEditingController();
 
   // Verbindlichkeiten Controller und Namen
-  final List<String> _liabilityNames = [
-    'Eigenheim-Hypothek',
-    'BAföG-Darlehen',
-    'Autokredit',
-    'Kreditkarten',
-    'Verbraucherkreditschulden',
-    'Immobilien-Hypothek',
-    'Geschäfte',
-    'Bankdarlehen',
+  final List<(String, LiabilityCategory)> _liabilityTypes = [
+    ('Eigenheim-Hypothek', LiabilityCategory.homeMortgage),
+    ('BAföG-Darlehen', LiabilityCategory.studentLoan),
+    ('Autokredit', LiabilityCategory.carLoan),
+    ('Kreditkarten', LiabilityCategory.creditCard),
+    ('Verbraucherkreditschulden', LiabilityCategory.consumerDebt),
+    ('Immobilien-Hypothek', LiabilityCategory.propertyMortgage),
+    ('Geschäfte', LiabilityCategory.business),
+    ('Bankdarlehen', LiabilityCategory.bankLoan),
   ];
   late List<TextEditingController> _liabilityAmountControllers;
   late List<TextEditingController> _liabilityPaymentControllers;
@@ -63,11 +63,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       (index) => TextEditingController(),
     );
     _liabilityAmountControllers = List.generate(
-      _liabilityNames.length,
+      _liabilityTypes.length,
       (index) => TextEditingController(),
     );
     _liabilityPaymentControllers = List.generate(
-      _liabilityNames.length,
+      _liabilityTypes.length,
       (index) => TextEditingController(),
     );
 
@@ -79,11 +79,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   void _setupExpenseListeners() {
     // Map für die Zuordnung von Ausgaben zu Verbindlichkeiten
     final Map<int, String> expenseToLiabilityName = {
-      1: 'Eigenheim-Hypothek', // Eigenheimrate -> Eigenheim-Hypothek
-      2: 'BAföG-Darlehen', // BAföG-Darlehen -> BAföG-Darlehen
-      3: 'Autokredit', // Auto Kredit Zahlung -> Autokredit
-      4: 'Kreditkarten', // Kreditkarten Zahlung -> Kreditkarten
-      5: 'Verbraucherkreditschulden', // Verbraucherkredit Zahlung -> Verbraucherkreditschulden
+      1: _liabilityTypes[0].$1, // Eigenheimrate -> Eigenheim-Hypothek
+      2: _liabilityTypes[1].$1, // BAföG-Darlehen -> BAföG-Darlehen
+      3: _liabilityTypes[2].$1, // Auto Kredit Zahlung -> Autokredit
+      4: _liabilityTypes[3].$1, // Kreditkarten Zahlung -> Kreditkarten
+      5: _liabilityTypes[4]
+          .$1, // Verbraucherkredit Zahlung -> Verbraucherkreditschulden
     };
 
     // Füge Listener für die relevanten Ausgaben-Controller hinzu
@@ -92,7 +93,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         final expenseAmount = _expenseControllers[expenseIndex].text;
 
         // Finde den Index der entsprechenden Verbindlichkeit
-        final liabilityIndex = _liabilityNames.indexOf(liabilityName);
+        final liabilityIndex =
+            _liabilityTypes.indexWhere((t) => t.$1 == liabilityName);
         if (liabilityIndex != -1) {
           // Aktualisiere die monatliche Rate der Verbindlichkeit
           _liabilityPaymentControllers[liabilityIndex].text = expenseAmount;
@@ -199,7 +201,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       }
 
       // Erstelle Verbindlichkeiten
-      for (int i = 0; i < _liabilityNames.length; i++) {
+      for (int i = 0; i < _liabilityTypes.length; i++) {
         if (_liabilityAmountControllers[i].text.isNotEmpty &&
             _liabilityPaymentControllers[i].text.isNotEmpty) {
           final totalDebt = int.parse(_liabilityAmountControllers[i].text);
@@ -208,8 +210,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
           if (totalDebt > 0 && monthlyPayment > 0) {
             liabilities.add(Liability(
-              name: _liabilityNames[i],
-              category: _liabilityNames[i],
+              name: _liabilityTypes[i].$1,
+              category: _liabilityTypes[i].$2,
               totalDebt: totalDebt,
               monthlyPayment: monthlyPayment,
             ));
@@ -442,12 +444,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              ...List.generate(_liabilityNames.length, (index) {
+              ...List.generate(_liabilityTypes.length, (index) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      _liabilityNames[index],
+                      _liabilityTypes[index].$1,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
