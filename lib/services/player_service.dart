@@ -38,6 +38,39 @@ class PlayerService {
 
   // Aktualisiert die Spielerdaten an einem Zahltag
   Future<PlayerData> processPayday(PlayerData playerData) async {
+    // Reduziere die Hypotheken für Immobilien
+    for (var asset in playerData.assets) {
+      if (asset.category == 'Immobilien') {
+        // Finde die zugehörige Hypothek
+        final mortgageIndex = playerData.liabilities.indexWhere(
+          (liability) => liability.name == 'Hypothek: ${asset.name}',
+        );
+
+        if (mortgageIndex >= 0) {
+          // Berechne die monatliche Rate (1% der ursprünglichen Hypothek)
+          final liability = playerData.liabilities[mortgageIndex];
+          final monthlyPayment = (asset.cost - asset.downPayment) * 0.01;
+
+          // Reduziere die Hypothek um die monatliche Rate
+          final newTotalDebt = liability.totalDebt - monthlyPayment.toInt();
+
+          if (newTotalDebt <= 0) {
+            // Hypothek ist abbezahlt
+            playerData.liabilities.removeAt(mortgageIndex);
+          } else {
+            // Aktualisiere die Hypothek
+            playerData.liabilities[mortgageIndex] = Liability(
+              name: liability.name,
+              category: liability.category,
+              totalDebt: newTotalDebt,
+              monthlyPayment: 0, // Bleibt 0, da im Cashflow berücksichtigt
+            );
+          }
+        }
+      }
+    }
+
+    // Normaler Zahltag-Prozess
     playerData.payday();
     await savePlayerData(playerData);
     return playerData;
@@ -45,7 +78,17 @@ class PlayerService {
 
   // Fügt einen neuen Vermögenswert hinzu
   Future<PlayerData> addAsset(PlayerData playerData, Asset asset) async {
+    // Füge den Vermögenswert zur Liste hinzu
     playerData.addAsset(asset);
+
+    // Bei Immobilien wird nur die Anzahlung von den Ersparnissen abgezogen
+    if (asset.category == 'Immobilien') {
+      playerData.savings -= asset.downPayment;
+    } else {
+      // Bei anderen Assets werden die gesamten Kosten abgezogen
+      playerData.savings -= asset.cost;
+    }
+
     await savePlayerData(playerData);
     return playerData;
   }
@@ -53,7 +96,48 @@ class PlayerService {
   // Fügt eine neue Verbindlichkeit hinzu
   Future<PlayerData> addLiability(
       PlayerData playerData, Liability liability) async {
+    // Füge die Verbindlichkeit zur Liste hinzu
     playerData.addLiability(liability);
+
+    // Nur für nicht-Immobilien-Hypotheken: Füge eine entsprechende Ausgabe hinzu
+    if (liability.category != 'Immobilien-Hypothek') {
+      // Bestimme den Ausgabentyp basierend auf der Kategorie
+      ExpenseType expenseType;
+      switch (liability.category) {
+        case 'Eigenheim-Hypothek':
+          expenseType = ExpenseType.homePayment;
+          break;
+        case 'BAföG-Darlehen':
+          expenseType = ExpenseType.schoolLoan;
+          break;
+        case 'Autokredite':
+          expenseType = ExpenseType.carLoan;
+          break;
+        case 'Kreditkarten':
+          expenseType = ExpenseType.creditCard;
+          break;
+        case 'Verbraucherkreditschulden':
+          expenseType = ExpenseType.retail;
+          break;
+        default:
+          expenseType = ExpenseType.other;
+      }
+
+      // Füge die monatliche Rate als Ausgabe hinzu
+      final expense = Expense(
+        name: liability.name,
+        amount: liability.monthlyPayment,
+        type: expenseType,
+      );
+      playerData.expenses.add(expense);
+
+      // Aktualisiere die Gesamtausgaben und den Cashflow
+      playerData.totalExpenses += expense.amount;
+      playerData.cashflow = playerData.salary +
+          playerData.passiveIncome -
+          playerData.totalExpenses;
+    }
+
     await savePlayerData(playerData);
     return playerData;
   }
@@ -106,7 +190,47 @@ class PlayerService {
   // Verkauft einen Vermögenswert
   Future<PlayerData> sellAsset(
       PlayerData playerData, int index, int sellPrice) async {
-    playerData.sellAsset(index, sellPrice: sellPrice);
+    final asset = playerData.assets[index];
+
+    // Berechne den tatsächlichen Gewinn basierend auf der Asset-Kategorie
+    int profit = sellPrice;
+
+    if (asset.category == 'Immobilien') {
+      // Bei Immobilien: Verkaufspreis minus verbleibende Hypothek
+      final mortgageIndex = playerData.liabilities.indexWhere(
+        (liability) => liability.name == 'Hypothek: ${asset.name}',
+      );
+
+      if (mortgageIndex >= 0) {
+        // Ziehe die verbleibende Hypothek vom Verkaufspreis ab
+        final remainingMortgage =
+            playerData.liabilities[mortgageIndex].totalDebt;
+        // Der Gewinn ist: Verkaufspreis minus verbleibende Hypothek minus ursprüngliche Anzahlung
+        profit = sellPrice - remainingMortgage - asset.downPayment;
+      } else {
+        // Falls keine Hypothek gefunden wurde (unwahrscheinlich), berechne den Gewinn normal
+        profit = sellPrice - asset.cost;
+      }
+    } else {
+      // Bei anderen Assets: Der Gewinn ist Verkaufspreis minus ursprüngliche Kosten
+      profit = sellPrice - asset.cost;
+    }
+
+    // Aktualisiere die Ersparnisse:
+    // Bei Immobilien: Anzahlung + Gewinn
+    // Bei anderen Assets: Verkaufspreis
+    if (asset.category == 'Immobilien') {
+      playerData.savings += asset.downPayment + profit;
+    } else {
+      playerData.savings += sellPrice;
+    }
+
+    // Entferne das Asset aus der Liste
+    playerData.assets.removeAt(index);
+
+    // Berechne das neue Nettovermögen
+    playerData.calculateNetWorth();
+
     await savePlayerData(playerData);
     return playerData;
   }

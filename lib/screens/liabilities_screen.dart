@@ -71,12 +71,13 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
   // Speichert die Verbindlichkeit (neu oder bearbeitet)
   void _saveLiability() {
     if (_formKey.currentState?.validate() ?? false) {
+      // Erstelle die Verbindlichkeit
       final liability = Liability(
         name: _nameController.text,
         category: _selectedCategory,
         totalDebt: int.parse(_totalDebtController.text),
         monthlyPayment: _selectedCategory == 'Immobilien-Hypothek'
-            ? (int.parse(_totalDebtController.text) * 0.01).round()
+            ? 0 // Keine monatliche Rate für Immobilien-Hypotheken
             : int.parse(_monthlyPaymentController.text),
       );
 
@@ -202,51 +203,54 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
               // Aktualisiere die Spielerdaten
               final newSavings = playerData.savings - liability.totalDebt;
 
-              // Finde die entsprechende Ausgabe
-              final expenseIndex = playerData.expenses.indexWhere((expense) {
-                if (liability.category == 'Eigenheim-Hypothek') {
-                  return expense.type == ExpenseType.homePayment;
-                } else if (liability.category == 'BAföG-Darlehen') {
-                  return expense.type == ExpenseType.schoolLoan;
-                } else if (liability.category == 'Autokredite') {
-                  return expense.type == ExpenseType.carLoan;
-                } else if (liability.category == 'Kreditkarten') {
-                  return expense.type == ExpenseType.creditCard;
-                } else if (liability.category == 'Verbraucherkreditschulden') {
-                  return expense.type == ExpenseType.retail;
-                }
-                return false;
-              });
-
-              // Berechne die neuen Ausgaben
+              // Berechne die neuen Ausgaben, aber nur für nicht-Immobilien-Hypotheken
               int newTotalExpenses = playerData.totalExpenses;
+              if (liability.category != 'Immobilien-Hypothek') {
+                // Finde die entsprechende Ausgabe
+                final expenseIndex = playerData.expenses.indexWhere((expense) {
+                  if (liability.category == 'Eigenheim-Hypothek') {
+                    return expense.type == ExpenseType.homePayment;
+                  } else if (liability.category == 'BAföG-Darlehen') {
+                    return expense.type == ExpenseType.schoolLoan;
+                  } else if (liability.category == 'Autokredite') {
+                    return expense.type == ExpenseType.carLoan;
+                  } else if (liability.category == 'Kreditkarten') {
+                    return expense.type == ExpenseType.creditCard;
+                  } else if (liability.category ==
+                      'Verbraucherkreditschulden') {
+                    return expense.type == ExpenseType.retail;
+                  }
+                  return false;
+                });
 
-              if (expenseIndex != -1) {
-                final expense = playerData.expenses[expenseIndex];
-                if (liability.category == 'Eigenheim-Hypothek') {
-                  // Bei Hypotheken: Reduziere nur die Rate
-                  final newAmount = expense.amount - liability.monthlyPayment;
-                  if (newAmount > 0) {
-                    // Aktualisiere die Ausgabe
-                    playerProvider.updateExpense(
-                        expenseIndex,
-                        Expense(
-                          name: expense.name,
-                          amount: newAmount,
-                          type: expense.type,
-                        ));
-                    newTotalExpenses =
-                        playerData.totalExpenses - liability.monthlyPayment;
+                if (expenseIndex != -1) {
+                  final expense = playerData.expenses[expenseIndex];
+                  if (liability.category == 'Eigenheim-Hypothek') {
+                    // Bei Hypotheken: Reduziere nur die Rate
+                    final newAmount = expense.amount - liability.monthlyPayment;
+                    if (newAmount > 0) {
+                      // Aktualisiere die Ausgabe
+                      playerProvider.updateExpense(
+                          expenseIndex,
+                          Expense(
+                            name: expense.name,
+                            amount: newAmount,
+                            type: expense.type,
+                          ));
+                      newTotalExpenses =
+                          playerData.totalExpenses - liability.monthlyPayment;
+                    } else {
+                      // Lösche die Ausgabe, wenn keine Rate mehr übrig ist
+                      playerProvider.deleteExpense(expenseIndex);
+                      newTotalExpenses =
+                          playerData.totalExpenses - expense.amount;
+                    }
                   } else {
-                    // Lösche die Ausgabe, wenn keine Rate mehr übrig ist
+                    // Bei anderen Verbindlichkeiten: Lösche die Ausgabe
                     playerProvider.deleteExpense(expenseIndex);
                     newTotalExpenses =
                         playerData.totalExpenses - expense.amount;
                   }
-                } else {
-                  // Bei anderen Verbindlichkeiten: Lösche die Ausgabe
-                  playerProvider.deleteExpense(expenseIndex);
-                  newTotalExpenses = playerData.totalExpenses - expense.amount;
                 }
               }
 
@@ -532,7 +536,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8.0),
                             child: Text(
-                              'Monatliche Rate: ${(int.tryParse(_totalDebtController.text) ?? 0) * 0.01} € (1% der Gesamtschuld)',
+                              'Monatliche Rate: 0 € (Rate ist bereits im Cashflow der Immobilie berücksichtigt)',
                               style: const TextStyle(color: Colors.grey),
                             ),
                           ),

@@ -172,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final name = _nameController.text;
 
                 // Berechne die monatliche Rate (1% der Hypothek)
-                final monthlyPayment = (mortgage * 0.01).round();
+                const monthlyPayment = 0;
 
                 final playerProvider =
                     Provider.of<PlayerProvider>(context, listen: false);

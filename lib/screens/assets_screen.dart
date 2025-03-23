@@ -332,6 +332,108 @@ class _AssetsScreenState extends State<AssetsScreen> {
         sellPricePerShareController.dispose();
         totalSellPriceNotifier.dispose();
       });
+    } else if (asset.category == 'Immobilien') {
+      // Für Immobilien: Verkaufspreis eingeben und Hypothek berücksichtigen
+      final TextEditingController sellPriceController =
+          TextEditingController(text: asset.cost.toString());
+
+      // Finde die zugehörige Hypothek
+      final playerProvider =
+          Provider.of<PlayerProvider>(context, listen: false);
+      final relatedMortgage = playerProvider.playerData?.liabilities.indexWhere(
+        (liability) => liability.name == 'Hypothek: ${asset.name}',
+      );
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Immobilie verkaufen'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Für wie viel möchtest du ${asset.name} verkaufen?'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: sellPriceController,
+                decoration: const InputDecoration(
+                  labelText: 'Verkaufspreis (€)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Anschaffungspreis: ${asset.cost} €',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              if (relatedMortgage != null && relatedMortgage >= 0)
+                Text(
+                  'Verbleibende Hypothek: ${playerProvider.playerData!.liabilities[relatedMortgage].totalDebt} €',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Abbrechen'),
+            ),
+            TextButton(
+              onPressed: () {
+                final sellPrice =
+                    int.tryParse(sellPriceController.text) ?? asset.cost;
+                Navigator.of(context).pop();
+
+                // Berechne Gewinn oder Verlust unter Berücksichtigung der Hypothek
+                int profit = sellPrice;
+                int remainingMortgage = 0;
+
+                if (relatedMortgage != null && relatedMortgage >= 0) {
+                  remainingMortgage = playerProvider
+                      .playerData!.liabilities[relatedMortgage].totalDebt;
+                  profit = sellPrice - remainingMortgage - asset.downPayment;
+
+                  // Lösche nur die Hypothek, keine Ausgabe da diese im Cashflow bereits berücksichtigt ist
+                  playerProvider.deleteLiability(relatedMortgage);
+                }
+
+                String profitText = '';
+                Color profitColor = Colors.green;
+
+                if (profit > 0) {
+                  profitText =
+                      ' (Gewinn nach Abzug der Hypothek und Anzahlung: $profit €)';
+                } else if (profit < 0) {
+                  profitText =
+                      ' (Verlust nach Abzug der Hypothek und Anzahlung: ${profit.abs()} €)';
+                  profitColor = Colors.red;
+                }
+
+                playerProvider.sellAsset(index, sellPrice);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                        '${asset.name} für $sellPrice € verkauft! Verbleibende Hypothek: $remainingMortgage €.$profitText'),
+                    backgroundColor: profitColor,
+                  ),
+                );
+
+                // Falls wir gerade dieses Asset bearbeiten, Formular zurücksetzen
+                if (_editMode && _editingIndex == index) {
+                  _resetForm();
+                }
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
+              child: const Text('Verkaufen'),
+            ),
+          ],
+        ),
+      ).then((_) {
+        // Stellen Sie sicher, dass der Controller aufgeräumt wird
+        sellPriceController.dispose();
+      });
     } else {
       // Originaler Dialog für andere Asset-Typen
       final TextEditingController sellPriceController =
