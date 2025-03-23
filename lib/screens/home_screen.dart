@@ -13,6 +13,17 @@ import 'payday_screen.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
+  void _handleMenuAction(BuildContext context, String action) {
+    switch (action) {
+      case 'credit':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LiabilitiesScreen()),
+        );
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PlayerProvider>(
@@ -80,6 +91,23 @@ class HomeScreen extends StatelessWidget {
                   );
                 },
                 tooltip: 'Profil zurücksetzen',
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                tooltip: 'Menü öffnen',
+                onSelected: (action) => _handleMenuAction(context, action),
+                itemBuilder: (BuildContext context) => [
+                  const PopupMenuItem<String>(
+                    value: 'credit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.credit_card),
+                        SizedBox(width: 8),
+                        Text('Kredit'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
