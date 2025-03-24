@@ -20,6 +20,7 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   bool _isCreatingRoom = false;
+  String _loadingMessage = 'Bitte warten...';
 
   @override
   void dispose() {
@@ -66,7 +67,10 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
   }
 
   void _createRoomWithName(String playerName) async {
-    setState(() => _isCreatingRoom = true);
+    setState(() {
+      _isCreatingRoom = true;
+      _loadingMessage = 'Raum wird erstellt...';
+    });
 
     final multiplayerProvider =
         Provider.of<MultiplayerProvider>(context, listen: false);
@@ -173,8 +177,12 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
             onPressed: () async {
               final code = _roomCodeController.text.toUpperCase();
               if (code.length == 6) {
-                setState(() => _isCreatingRoom = true);
                 Navigator.of(context).pop();
+                
+                setState(() {
+                  _isCreatingRoom = true; 
+                  _loadingMessage = 'Raum wird gesucht...';
+                });
                 
                 final multiplayerProvider =
                     Provider.of<MultiplayerProvider>(context, listen: false);
@@ -227,6 +235,12 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
             onPressed: () {
               if (_nameController.text.isNotEmpty) {
                 Navigator.of(context).pop();
+                
+                setState(() {
+                  _isCreatingRoom = true;
+                  _loadingMessage = 'Trete Raum bei...';
+                });
+                
                 _navigateToGameRoom(
                     roomCode: roomCode, playerName: _nameController.text);
               }
@@ -240,6 +254,7 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
 
   void _navigateToGameRoom(
       {required String roomCode, required String playerName}) {
+    // Keep the loading state active during navigation
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -248,45 +263,79 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
           playerName: playerName,
         ),
       ),
-    );
+    ).then((_) {
+      // Once navigation is complete (e.g., when returning from GameRoomScreen),
+      // ensure we reset the loading state
+      if (mounted) {
+        setState(() => _isCreatingRoom = false);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Multiplayer'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton.icon(
-              onPressed: _createRoom,
-              icon: const Icon(Icons.add),
-              label: const Text('Raum erstellen'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            title: const Text('Multiplayer'),
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _isCreatingRoom ? null : _createRoom,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Raum erstellen'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: _joinRoom,
-              icon: const Icon(Icons.login),
-              label: const Text('Raum beitreten'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: _isCreatingRoom ? null : _joinRoom,
+                  icon: const Icon(Icons.login),
+                  label: const Text('Raum beitreten'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        // Loading Overlay
+        if (_isCreatingRoom)
+          Container(
+            color: Colors.black54,
+            width: double.infinity,
+            height: double.infinity,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    _loadingMessage,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -309,6 +358,8 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
   List<PlayerData> _players = [];
   bool _isGameStarted = false;
   bool _hasInitialized = false;
+  bool _isLoading = true;
+  String _loadingMessage = 'Verbinde mit Raum...';
   late MultiplayerProvider _multiplayerProvider;
 
   @override
@@ -316,15 +367,58 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
     super.initState();
     _multiplayerProvider = Provider.of<MultiplayerProvider>(context, listen: false);
     
-    // Zeige Erfolgsmeldung bei erfolgreicher Firebase-Verbindung
-    Future.delayed(Duration.zero, () {
+    // Versuche sofort eine Verbindung herzustellen
+    _connectToRoom();
+  }
+
+  Future<void> _connectToRoom() async {
+    try {
+      // Prüfe, ob bereits verbunden
+      if (!_multiplayerProvider.isInRoom) {
+        // Erstelle einen temporären Spieler
+        final player = PlayerData(
+          id: const Uuid().v4(),
+          name: widget.playerName,
+          profession: 'Spieler',
+          salary: 0,
+          savings: 0,
+          assets: [],
+          liabilities: [],
+          expenses: [],
+          totalExpenses: 0,
+          cashflow: 0,
+          costPerChild: 0,
+        );
+        
+        setState(() {
+          _players = [player];
+          _loadingMessage = widget.roomCode.length == 6 
+              ? 'Trete Raum bei...' 
+              : 'Verbinde mit Raum...';
+        });
+        
+        // Versuche, einen Raum zu betreten oder mit einem existierenden zu verbinden
+        if (widget.roomCode.length == 6) {
+          await _multiplayerProvider.joinRoom(widget.roomCode, player);
+        }
+      }
+      
+      setState(() => _isLoading = false);
+      
+      // Zeige Erfolgsmeldung bei erfolgreicher Verbindung
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Raum verbunden'),
           duration: Duration(seconds: 3),
         ),
       );
-    });
+      
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler bei der Verbindung: $e')),
+      );
+    }
   }
 
   @override
@@ -332,8 +426,7 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
     super.didChangeDependencies();
     if (!_hasInitialized) {
       _hasInitialized = true;
-      // Füge den Spieler hinzu und zeige Profil-Setup
-      //_addPlayer();
+      // Die Verbindung wird jetzt in initState hergestellt
     }
   }
 
@@ -344,56 +437,6 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
       _multiplayerProvider.leaveRoom();
     }
     super.dispose();
-  }
-
-  void _addPlayer() async {
-    final player = PlayerData(
-      id: const Uuid().v4(),
-      name: widget.playerName,
-      profession: 'Spieler',
-      salary: 0,
-      savings: 0,
-      assets: [],
-      liabilities: [],
-      expenses: [],
-      totalExpenses: 0,
-      cashflow: 0,
-      costPerChild: 0,
-    );
-    
-    setState(() {
-      _players = [player];
-    });
-    
-    // Prüfe, ob der Raum bereits existiert oder einem Raum beigetreten werden soll
-    try {
-      if (widget.roomCode.length == 6) {
-        // Wenn Beitritt zu bestehendem Raum
-        if (!_multiplayerProvider.isInRoom) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Betrete Raum...')),
-          );
-          
-          await _multiplayerProvider.joinRoom(widget.roomCode, player);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Raum mit Code ${widget.roomCode} beigetreten!')),
-          );
-        }
-      } else if (!_multiplayerProvider.isInRoom) {
-        // Wenn Raum nicht existiert - dieser Fall sollte für die Raumerstellung nicht mehr vorkommen,
-        // da der Raum bereits in _createRoomWithName erstellt wurde
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verbinde mit bestehendem Raum...')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fehler bei der Verbindung: $e')),
-      );
-    }
-    
-    // Dann zeige das Profil-Setup
-    _showProfileSetupDialog(player);
   }
 
   void _showProfileSetupDialog(PlayerData player) {
@@ -432,160 +475,197 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MultiplayerProvider>(
-      builder: (context, multiplayerProvider, child) {
-        final room = multiplayerProvider.currentRoom;
-        final players = room?.players ?? _players;
-        final isHost = multiplayerProvider.isHost;
-        final canStart = room?.canStart ?? false;
-        final error = multiplayerProvider.error;
-        
-        if (error != null) {
-          // Zeige Fehler als Snackbar an
-          Future.microtask(() {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(error)),
-            );
-            multiplayerProvider.clearError();
-          });
-        }
-        
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Spielraum'),
-            actions: [
-              if (canStart && isHost)
-                TextButton.icon(
-                  onPressed: () async {
-                    try {
-                      await multiplayerProvider.startGame();
-                      // Setze die Spielerdaten für den aktuellen Spieler
-                      final currentPlayer = multiplayerProvider.currentPlayer;
-                      if (currentPlayer != null) {
-                        Provider.of<PlayerProvider>(context, listen: false)
-                            .setPlayerData(currentPlayer);
-                      }
-                      
-                      // Navigiere zum HomeScreen und entferne alle vorherigen Screens
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => const HomeScreen()),
-                        (route) => false,
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Fehler beim Starten: $e')),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.play_arrow, color: Colors.white),
-                  label: const Text(
-                    'Spiel starten',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-            ],
-          ),
-          body: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
+      children: [
+        Consumer<MultiplayerProvider>(
+          builder: (context, multiplayerProvider, child) {
+            final room = multiplayerProvider.currentRoom;
+            final players = room?.players ?? _players;
+            final isHost = multiplayerProvider.isHost;
+            final canStart = room?.canStart ?? false;
+            final error = multiplayerProvider.error;
+            
+            if (error != null) {
+              // Zeige Fehler als Snackbar an
+              Future.microtask(() {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(error)),
+                );
+                multiplayerProvider.clearError();
+              });
+            }
+            
+            // Wenn wir jetzt verbunden sind und vorher geladen haben, aktualisiere Status
+            if (multiplayerProvider.isInRoom && _isLoading) {
+              Future.microtask(() {
+                setState(() => _isLoading = false);
+              });
+            }
+            
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Spielraum'),
+                actions: [
+                  if (canStart && isHost)
+                    TextButton.icon(
+                      onPressed: () async {
+                        try {
+                          await multiplayerProvider.startGame();
+                          // Setze die Spielerdaten für den aktuellen Spieler
+                          final currentPlayer = multiplayerProvider.currentPlayer;
+                          if (currentPlayer != null) {
+                            Provider.of<PlayerProvider>(context, listen: false)
+                                .setPlayerData(currentPlayer);
+                          }
+                          
+                          // Navigiere zum HomeScreen und entferne alle vorherigen Screens
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) => const HomeScreen()),
+                            (route) => false,
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Fehler beim Starten: $e')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.play_arrow, color: Colors.white),
+                      label: const Text(
+                        'Spiel starten',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                ],
+              ),
+              body: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Raumcode: ${room?.code ?? widget.roomCode}',
-                          style: Theme.of(context).textTheme.titleLarge,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Raumcode: ${room?.code ?? widget.roomCode}',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Spieler: ${players.length}',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Spieler: ${players.length}',
-                          style: Theme.of(context).textTheme.bodyLarge,
+                        IconButton(
+                          icon: const Icon(Icons.copy),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: room?.code ?? widget.roomCode));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Code kopiert!')),
+                            );
+                          },
                         ),
                       ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.copy),
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: room?.code ?? widget.roomCode));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Code kopiert!')),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: players.length,
-                  itemBuilder: (context, index) {
-                    final player = players[index];
-                    final isCurrentPlayer = player.id == multiplayerProvider.currentPlayer?.id;
-                    print(isCurrentPlayer);
-                    return ListTile(
-                      leading: CircleAvatar(
-                        child: Text(player.name[0]),
-                        backgroundColor: isCurrentPlayer ? Colors.blue : Colors.white,
-                      ),
-                      title: Text(
-                        player.name,
-                        style: TextStyle(
-                          fontWeight: isCurrentPlayer ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                      subtitle: Text(
-                        player.salary > 0 ? 'Bereit' : 'Profil erstellen',
-                        style: TextStyle(
-                          color: player.salary > 0 ? Colors.green : Colors.orange,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      trailing: isCurrentPlayer && player.salary == 0
-                          ? ElevatedButton.icon(
-                              icon: const Icon(Icons.edit),
-                              label: const Text('Profil erstellen'),
-                              onPressed: () => _showProfileSetupDialog(player),
-                            )
-                          : null,
-                    );
-                  },
-                ),
-              ),
-              if (room?.status == GameRoomStatus.waiting)
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Text(
-                        isHost 
-                            ? 'Warte auf weitere Spieler...' 
-                            : 'Warte auf den Host...',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                      if (canStart && isHost)
-                        const SizedBox(height: 8),
-                      if (canStart && isHost)
-                        Text(
-                          'Alle Spieler sind bereit!',
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                    ],
                   ),
-                ),
-            ],
+                  const Divider(),
+                  Expanded(
+                    child: players.isEmpty
+                        ? const Center(child: Text('Keine Spieler vorhanden'))
+                        : ListView.builder(
+                            itemCount: players.length,
+                            itemBuilder: (context, index) {
+                              final player = players[index];
+                              final isCurrentPlayer = player.id == multiplayerProvider.currentPlayer?.id;
+                              
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  child: Text(player.name[0]),
+                                  backgroundColor: isCurrentPlayer ? Colors.blue : Colors.white,
+                                ),
+                                title: Text(
+                                  player.name,
+                                  style: TextStyle(
+                                    fontWeight: isCurrentPlayer ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  player.salary > 0 ? 'Bereit' : 'Profil erstellen',
+                                  style: TextStyle(
+                                    color: player.salary > 0 ? Colors.green : Colors.orange,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                trailing: isCurrentPlayer && player.salary == 0
+                                    ? ElevatedButton.icon(
+                                        icon: const Icon(Icons.edit),
+                                        label: const Text('Profil erstellen'),
+                                        onPressed: () => _showProfileSetupDialog(player),
+                                      )
+                                    : null,
+                              );
+                            },
+                          ),
+                  ),
+                  if (room?.status == GameRoomStatus.waiting)
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            isHost 
+                                ? 'Warte auf weitere Spieler...' 
+                                : 'Warte auf den Host...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                          if (canStart && isHost)
+                            const SizedBox(height: 8),
+                          if (canStart && isHost)
+                            Text(
+                              'Alle Spieler sind bereit!',
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+        // Loading Overlay
+        if (_isLoading)
+          Container(
+            color: Colors.black54,
+            width: double.infinity,
+            height: double.infinity,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    _loadingMessage,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                ],
+              ),
+            ),
           ),
-        );
-      },
+      ],
     );
   }
 }
