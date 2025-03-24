@@ -7,6 +7,8 @@ class MultiplayerProvider with ChangeNotifier {
   GameRoom? _currentRoom;
   bool _isConnecting = false;
   String? _error;
+  final Set<String> _activeRoomCodes = {};
+  final Random _random = Random();
 
   GameRoom? get currentRoom => _currentRoom;
   bool get isConnecting => _isConnecting;
@@ -18,6 +20,24 @@ class MultiplayerProvider with ChangeNotifier {
         orElse: () => _currentRoom!.host,
       );
   String? _currentPlayerId;
+
+  bool isRoomActive(String code) => _activeRoomCodes.contains(code);
+
+  String generateUniqueRoomCode() {
+    String code;
+    do {
+      code = List.generate(6, (_) => _random.nextInt(10)).join();
+    } while (_activeRoomCodes.contains(code));
+
+    _activeRoomCodes.add(code);
+    notifyListeners();
+    return code;
+  }
+
+  void removeRoom(String code) {
+    _activeRoomCodes.remove(code);
+    notifyListeners();
+  }
 
   // Generiere einen zufälligen 6-stelligen Code
   String _generateRoomCode() {

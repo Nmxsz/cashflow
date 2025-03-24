@@ -6,7 +6,14 @@ import '../providers/player_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
-  const ProfileSetupScreen({Key? key}) : super(key: key);
+  final PlayerData player;
+  final Function(PlayerData) onProfileSaved;
+
+  const ProfileSetupScreen({
+    Key? key,
+    required this.player,
+    required this.onProfileSaved,
+  }) : super(key: key);
 
   @override
   State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
@@ -241,25 +248,21 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       // Erstelle Spielerdaten
       var uuid = Uuid();
       final playerData = PlayerData(
-        id: uuid.v4(),
+        id: widget.player.id,
         name: _nameController.text,
         profession: _professionController.text,
         salary: salary,
         passiveIncome: passiveIncome,
         totalExpenses: totalExpenses,
         cashflow: monthlyCashflow,
-        savings: totalSavings, // Verwende die aktualisierten Ersparnisse
+        savings: totalSavings,
         costPerChild: costPerChild,
         expenses: expenses,
         liabilities: liabilities,
       );
 
-      // Speichere Spielerdaten im Provider
-      Provider.of<PlayerProvider>(context, listen: false)
-          .setPlayerData(playerData);
-
-      // Navigiere zurück zum HomeScreen
-      Navigator.pop(context);
+      // Rufe nur den Callback auf
+      widget.onProfileSaved(playerData);
     }
   }
 

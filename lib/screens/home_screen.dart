@@ -11,6 +11,7 @@ import 'liabilities_screen.dart';
 import 'expenses_screen.dart';
 import 'payday_screen.dart';
 import 'multiplayer_room_screen.dart';
+import 'package:uuid/uuid.dart';
 
 // Global key für den Zugriff auf den HomeScreen-State
 final GlobalKey<_HomeScreenState> homeScreenKey = GlobalKey<_HomeScreenState>();
@@ -450,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 20),
                         const Text(
-                          'Du hast noch kein Profil eingerichtet.',
+                          'Wähle deinen Spielmodus:',
                           style: TextStyle(fontSize: 16),
                           textAlign: TextAlign.center,
                         ),
@@ -460,12 +461,44 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    const ProfileSetupScreen(),
+                                builder: (context) => ProfileSetupScreen(
+                                  player: PlayerData(
+                                    id: const Uuid().v4(),
+                                    name: '',
+                                    profession: '',
+                                    salary: 0,
+                                    savings: 0,
+                                    assets: [],
+                                    liabilities: [],
+                                    expenses: [],
+                                    totalExpenses: 0,
+                                    cashflow: 0,
+                                    costPerChild: 0,
+                                  ),
+                                  onProfileSaved: (player) {
+                                    Provider.of<PlayerProvider>(context,
+                                            listen: false)
+                                        .setPlayerData(player);
+                                    Navigator.pop(context);
+                                  },
+                                ),
                               ),
                             );
                           },
-                          child: const Text('Profil einrichten'),
+                          child: const Text('Singleplayer'),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const MultiplayerRoomScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text('Multiplayer'),
                         ),
                       ],
                     ),
@@ -654,19 +687,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         MaterialPageRoute(
                             builder: (context) => const PaydayScreen()),
                       ),
-                    ),
-                    _buildActionCard(
-                      context,
-                      'Multiplayer',
-                      Icons.group,
-                      Colors.purple,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                const MultiplayerRoomScreen()),
-                      ),
-                    ),
+                    )
                   ],
                 ),
               ],
