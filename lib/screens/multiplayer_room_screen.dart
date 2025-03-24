@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/index.dart';
+import '../models/game_room.dart';
 import '../providers/player_provider.dart';
 import '../providers/multiplayer_provider.dart';
 import 'package:provider/provider.dart';
@@ -69,6 +70,8 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
 
     final multiplayerProvider =
         Provider.of<MultiplayerProvider>(context, listen: false);
+    
+    // Benutze die öffentliche Methode, die für Abwärtskompatibilität beibehalten wird
     final roomCode = multiplayerProvider.generateUniqueRoomCode();
 
     showDialog(
@@ -124,8 +127,9 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
             labelText: 'Raumcode eingeben',
             border: OutlineInputBorder(),
           ),
-          keyboardType: TextInputType.number,
+          keyboardType: TextInputType.text,
           maxLength: 6,
+          textCapitalization: TextCapitalization.characters,
         ),
         actions: [
           TextButton(
@@ -133,19 +137,32 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
             child: const Text('Abbrechen'),
           ),
           TextButton(
-            onPressed: () {
-              final code = _roomCodeController.text;
-              final multiplayerProvider =
-                  Provider.of<MultiplayerProvider>(context, listen: false);
-
-              if (code.length == 6 && multiplayerProvider.isRoomActive(code)) {
+            onPressed: () async {
+              final code = _roomCodeController.text.toUpperCase();
+              if (code.length == 6) {
+                setState(() => _isCreatingRoom = true);
                 Navigator.of(context).pop();
-                _showNameInputDialog(code);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Ungültiger oder inaktiver Raumcode')),
-                );
+                
+                final multiplayerProvider =
+                    Provider.of<MultiplayerProvider>(context, listen: false);
+                
+                try {
+                  final exists = await multiplayerProvider.roomExists(code);
+                  if (exists) {
+                    _showNameInputDialog(code);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Ungültiger Code oder Raum existiert nicht mehr')),
+                    );
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Fehler: $e')),
+                  );
+                } finally {
+                  setState(() => _isCreatingRoom = false);
+                }
               }
             },
             child: const Text('Weiter'),
@@ -259,10 +276,22 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
   List<PlayerData> _players = [];
   bool _isGameStarted = false;
   bool _hasInitialized = false;
+  late MultiplayerProvider _multiplayerProvider;
 
   @override
   void initState() {
     super.initState();
+    _multiplayerProvider = Provider.of<MultiplayerProvider>(context, listen: false);
+    
+    // Zeige Erfolgsmeldung bei erfolgreicher Firebase-Verbindung
+    Future.delayed(Duration.zero, () {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Firebase-Verbindung hergestellt - Multiplayer ist aktiviert'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    });
   }
 
   @override
@@ -277,6 +306,10 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
 
   @override
   void dispose() {
+    // Wenn der Bildschirm geschlossen wird, verlasse den Raum
+    if (_multiplayerProvider.isInRoom) {
+      _multiplayerProvider.leaveRoom();
+    }
     super.dispose();
   }
 
@@ -294,7 +327,11 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
       cashflow: 0,
       costPerChild: 0,
     );
-    _players.add(player);
+    
+    setState(() {
+      _players = [player];
+    });
+    
     _showProfileSetupDialog(player);
   }
 
@@ -305,14 +342,14 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
         MaterialPageRoute(
           builder: (context) => ProfileSetupScreen(
             player: player,
-            onProfileSaved: (updatedPlayer) {
+            onProfileSaved: (updatedPlayer) async {
               setState(() {
-                final index =
-                    _players.indexWhere((p) => p.id == updatedPlayer.id);
-                if (index != -1) {
-                  _players[index] = updatedPlayer;
-                }
+                _players = [updatedPlayer];
               });
+              
+              // Versuche, einen Raum zu erstellen oder beizutreten
+              _connectToRoom(updatedPlayer);
+              
               Navigator.pop(context); // Navigiere zurück zum GameRoom
             },
           ),
@@ -321,128 +358,209 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
     });
   }
 
+  Future<void> _connectToRoom(PlayerData player) async {
+    try {
+      if (_multiplayerProvider.isInRoom) {
+        // Bereits in einem Raum, nichts tun
+        return;
+      }
+      
+      // Versuche, Raum zu erstellen oder beizutreten basierend auf dem Code
+      if (_multiplayerProvider.currentRoom == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verbinde zum Raum...')),
+        );
+        
+        if (widget.roomCode.length == 6) {
+          try {
+            await _multiplayerProvider.joinRoom(widget.roomCode, player);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Erfolgreich beigetreten!')),
+            );
+          } catch (e) {
+            try {
+              // Wenn Beitritt fehlschlägt, versuche den Raum zu erstellen
+              await _multiplayerProvider.createRoom(player);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Raum erstellt!')),
+              );
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Verbindungsfehler: $e')),
+              );
+            }
+          }
+        } else {
+          // Erstelle einen neuen Raum
+          await _multiplayerProvider.createRoom(player);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Raum erstellt!')),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Spielraum'),
-        actions: [
-          if (!_isGameStarted &&
-              _players.isNotEmpty &&
-              _players.every((p) => p.salary > 0))
-            TextButton.icon(
-              onPressed: () {
-                setState(() => _isGameStarted = true);
-                // Setze die Spielerdaten für alle Spieler und navigiere zum HomeScreen
-                for (var player in _players) {
-                  Provider.of<PlayerProvider>(context, listen: false)
-                      .setPlayerData(player);
-                }
-                // Navigiere zum HomeScreen und entferne alle vorherigen Screens
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  (route) => false,
-                );
-              },
-              icon: const Icon(Icons.play_arrow, color: Colors.white),
-              label: const Text(
-                'Spiel starten',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Consumer<MultiplayerProvider>(
+      builder: (context, multiplayerProvider, child) {
+        final room = multiplayerProvider.currentRoom;
+        final players = room?.players ?? _players;
+        final isHost = multiplayerProvider.isHost;
+        final canStart = room?.canStart ?? false;
+        final error = multiplayerProvider.error;
+        
+        if (error != null) {
+          // Zeige Fehler als Snackbar an
+          Future.microtask(() {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(error)),
+            );
+            multiplayerProvider.clearError();
+          });
+        }
+        
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Spielraum'),
+            actions: [
+              if (canStart && isHost)
+                TextButton.icon(
+                  onPressed: () async {
+                    try {
+                      await multiplayerProvider.startGame();
+                      // Setze die Spielerdaten für den aktuellen Spieler
+                      final currentPlayer = multiplayerProvider.currentPlayer;
+                      if (currentPlayer != null) {
+                        Provider.of<PlayerProvider>(context, listen: false)
+                            .setPlayerData(currentPlayer);
+                      }
+                      
+                      // Navigiere zum HomeScreen und entferne alle vorherigen Screens
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => const HomeScreen()),
+                        (route) => false,
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Fehler beim Starten: $e')),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.play_arrow, color: Colors.white),
+                  label: const Text(
+                    'Spiel starten',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+            ],
+          ),
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Raumcode: ${widget.roomCode}',
-                      style: Theme.of(context).textTheme.titleLarge,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Raumcode: ${room?.code ?? widget.roomCode}',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Spieler: ${players.length}',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Spieler: ${_players.length}',
-                      style: Theme.of(context).textTheme.bodyLarge,
+                    IconButton(
+                      icon: const Icon(Icons.copy),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: room?.code ?? widget.roomCode));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Code kopiert!')),
+                        );
+                      },
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.copy),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: widget.roomCode));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Code kopiert!')),
+              ),
+              const Divider(),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: players.length,
+                  itemBuilder: (context, index) {
+                    final player = players[index];
+                    final isCurrentPlayer = player.id == multiplayerProvider.currentPlayer?.id;
+                    
+                    return ListTile(
+                      leading: CircleAvatar(
+                        child: Text(player.name[0]),
+                        backgroundColor: isCurrentPlayer ? Theme.of(context).primaryColor : null,
+                      ),
+                      title: Text(
+                        player.name,
+                        style: TextStyle(
+                          fontWeight: isCurrentPlayer ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      subtitle: Text(
+                        player.salary > 0 ? 'Bereit' : 'Profil erstellen',
+                        style: TextStyle(
+                          color: player.salary > 0 ? Colors.green : Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      trailing: isCurrentPlayer && player.salary == 0
+                          ? ElevatedButton.icon(
+                              icon: const Icon(Icons.edit),
+                              label: const Text('Profil erstellen'),
+                              onPressed: () => _showProfileSetupDialog(player),
+                            )
+                          : null,
                     );
                   },
                 ),
-              ],
-            ),
-          ),
-          const Divider(),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _players.length,
-              itemBuilder: (context, index) {
-                final player = _players[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    child: Text(player.name[0]),
-                  ),
-                  title: Text(player.name),
-                  subtitle: Text(
-                    player.salary > 0 ? 'Bereit' : 'Profil erstellen',
-                    style: TextStyle(
-                      color: player.salary > 0 ? Colors.green : Colors.orange,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  trailing: player.salary == 0
-                      ? ElevatedButton.icon(
-                          icon: const Icon(Icons.edit),
-                          label: const Text('Profil erstellen'),
-                          onPressed: () => _showProfileSetupDialog(player),
-                        )
-                      : null,
-                );
-              },
-            ),
-          ),
-          if (!_isGameStarted)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Text(
-                    'Warte auf weitere Spieler...',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                  if (_players.isNotEmpty &&
-                      _players.every((p) => p.salary > 0))
-                    const SizedBox(height: 8),
-                  if (_players.isNotEmpty &&
-                      _players.every((p) => p.salary > 0))
-                    Text(
-                      'Alle Spieler sind bereit!',
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                ],
               ),
-            ),
-        ],
-      ),
+              if (room?.status == GameRoomStatus.waiting)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        isHost 
+                            ? 'Warte auf weitere Spieler...' 
+                            : 'Warte auf den Host...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      if (canStart && isHost)
+                        const SizedBox(height: 8),
+                      if (canStart && isHost)
+                        Text(
+                          'Alle Spieler sind bereit!',
+                          style: TextStyle(
+                            color: Theme.of(context).primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

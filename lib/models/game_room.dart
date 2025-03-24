@@ -26,7 +26,7 @@ class GameRoom {
     this.startedAt,
   });
 
-  bool get canStart => players.length >= 2 && status == GameRoomStatus.waiting;
+  bool get canStart => players.length >= 1 && status == GameRoomStatus.waiting;
   bool get isFull => players.length >= maxPlayers;
   PlayerData get currentPlayer => players[currentPlayerIndex];
 

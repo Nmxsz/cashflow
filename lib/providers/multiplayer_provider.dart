@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/game_room.dart';
 import '../models/player_data.dart';
+import '../services/firebase_service.dart';
 import 'dart:math';
 
 class MultiplayerProvider with ChangeNotifier {
@@ -9,26 +10,26 @@ class MultiplayerProvider with ChangeNotifier {
   String? _error;
   final Set<String> _activeRoomCodes = {};
   final Random _random = Random();
+  final FirebaseService _firebaseService = FirebaseService();
+  String? _currentPlayerId;
 
   GameRoom? get currentRoom => _currentRoom;
   bool get isConnecting => _isConnecting;
   String? get error => _error;
   bool get isInRoom => _currentRoom != null;
-  bool get isHost => _currentRoom?.host == currentPlayer;
+  bool get isHost => _currentRoom?.host.id == _currentPlayerId;
   PlayerData? get currentPlayer => _currentRoom?.players.firstWhere(
         (p) => p.id == _currentPlayerId,
         orElse: () => _currentRoom!.host,
       );
-  String? _currentPlayerId;
 
   bool isRoomActive(String code) => _activeRoomCodes.contains(code);
 
   String generateUniqueRoomCode() {
-    String code;
-    do {
-      code = List.generate(6, (_) => _random.nextInt(10)).join();
-    } while (_activeRoomCodes.contains(code));
-
+    // Diese Methode wird nur für die Abwärtskompatibilität beibehalten.
+    // Stattdessen sollte die neue _generateRoomCode() Methode verwendet werden,
+    // gefolgt von einem Aufruf von createRoom().
+    final code = generateRoomCode();
     _activeRoomCodes.add(code);
     notifyListeners();
     return code;
@@ -40,11 +41,22 @@ class MultiplayerProvider with ChangeNotifier {
   }
 
   // Generiere einen zufälligen 6-stelligen Code
-  String _generateRoomCode() {
+  String generateRoomCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random();
     return List.generate(6, (index) => chars[random.nextInt(chars.length)])
         .join();
+  }
+
+  // Prüfe, ob ein Raum existiert
+  Future<bool> roomExists(String code) async {
+    try {
+      return await _firebaseService.roomExists(code);
+    } catch (e) {
+      _error = 'Fehler beim Prüfen des Raums: $e';
+      notifyListeners();
+      return false;
+    }
   }
 
   // Erstelle einen neuen Raum
@@ -54,19 +66,21 @@ class MultiplayerProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      // TODO: Implementiere die tatsächliche Raumerstellung mit Backend
-      await Future.delayed(
-          const Duration(seconds: 1)); // Simuliere Netzwerkverzögerung
-
-      final roomCode = _generateRoomCode();
-      _currentRoom = GameRoom(
+      final roomCode = generateRoomCode();
+      final room = GameRoom(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         code: roomCode,
         host: host,
         players: [host],
         createdAt: DateTime.now(),
       );
+
+      await _firebaseService.createRoom(room);
+      _currentRoom = room;
       _currentPlayerId = host.id;
+
+      // Starte Listener für Raumänderungen
+      _startRoomListener(roomCode);
 
       _isConnecting = false;
       notifyListeners();
@@ -85,21 +99,31 @@ class MultiplayerProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      // TODO: Implementiere den tatsächlichen Beitritt mit Backend
-      await Future.delayed(
-          const Duration(seconds: 1)); // Simuliere Netzwerkverzögerung
+      // Prüfe, ob der Raum existiert
+      final roomExists = await _firebaseService.roomExists(roomCode);
+      if (!roomExists) {
+        throw Exception('Raum nicht gefunden oder Code ungültig');
+      }
 
-      // Simuliere einen Raumbeitritt
-      if (_currentRoom == null) {
+      // Hole den Raum
+      final room = await _firebaseService.getRoomByCode(roomCode);
+      if (room == null) {
         throw Exception('Raum nicht gefunden');
       }
-      if (_currentRoom!.isFull) {
+
+      if (room.isFull) {
         throw Exception('Raum ist voll');
       }
 
-      final updatedPlayers = [..._currentRoom!.players, player];
-      _currentRoom = _currentRoom!.copyWith(players: updatedPlayers);
+      // Füge den Spieler zum Raum hinzu
+      await _firebaseService.addPlayerToRoom(roomCode, player);
+      
+      // Aktualisiere lokalen Zustand
+      _currentRoom = room;
       _currentPlayerId = player.id;
+
+      // Starte Listener für Raumänderungen
+      _startRoomListener(roomCode);
 
       _isConnecting = false;
       notifyListeners();
@@ -109,6 +133,24 @@ class MultiplayerProvider with ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+  
+  // Starte Listener für Raumänderungen
+  void _startRoomListener(String roomCode) {
+    _firebaseService.roomStream(roomCode).listen((room) {
+      if (room != null) {
+        _currentRoom = room;
+        notifyListeners();
+      } else {
+        // Raum wurde gelöscht
+        _currentRoom = null;
+        _error = 'Der Raum existiert nicht mehr';
+        notifyListeners();
+      }
+    }, onError: (e) {
+      _error = 'Fehler bei der Verbindung: $e';
+      notifyListeners();
+    });
   }
 
   // Starte das Spiel
@@ -121,10 +163,13 @@ class MultiplayerProvider with ChangeNotifier {
         throw Exception('Spiel kann noch nicht gestartet werden');
       }
 
-      _currentRoom = _currentRoom!.copyWith(
+      final updatedRoom = _currentRoom!.copyWith(
         status: GameRoomStatus.playing,
         startedAt: DateTime.now(),
       );
+      
+      await _firebaseService.updateRoom(updatedRoom);
+      _currentRoom = updatedRoom;
       notifyListeners();
     } catch (e) {
       _error = 'Fehler beim Starten des Spiels: $e';
@@ -136,20 +181,14 @@ class MultiplayerProvider with ChangeNotifier {
   // Verlasse den Raum
   Future<void> leaveRoom() async {
     try {
-      if (_currentRoom == null) return;
+      if (_currentRoom == null || _currentPlayerId == null) return;
 
-      // Wenn der Host den Raum verlässt, wird der Raum aufgelöst
-      if (isHost) {
-        // TODO: Informiere andere Spieler
-        _currentRoom = null;
-      } else {
-        // Entferne den Spieler aus der Liste
-        final updatedPlayers = _currentRoom!.players
-            .where((p) => p.id != _currentPlayerId)
-            .toList();
-        _currentRoom = _currentRoom!.copyWith(players: updatedPlayers);
-      }
-
+      final roomCode = _currentRoom!.code;
+      
+      // Entferne den Spieler aus dem Raum
+      await _firebaseService.removePlayerFromRoom(roomCode, _currentPlayerId!);
+      
+      _currentRoom = null;
       _currentPlayerId = null;
       notifyListeners();
     } catch (e) {
@@ -160,9 +199,15 @@ class MultiplayerProvider with ChangeNotifier {
   }
 
   // Aktualisiere den Spielstatus
-  void updateGameState(GameRoom newRoom) {
-    _currentRoom = newRoom;
-    notifyListeners();
+  void updateGameState(GameRoom newRoom) async {
+    try {
+      await _firebaseService.updateRoom(newRoom);
+      _currentRoom = newRoom;
+      notifyListeners();
+    } catch (e) {
+      _error = 'Fehler beim Aktualisieren des Spiels: $e';
+      notifyListeners();
+    }
   }
 
   void clearError() {
