@@ -1,6 +1,5 @@
 name: cashflowtracker
-description: "Eine interaktive App zum Verfolgen und Verwalten von Cashflow in einem spielerischen Umfeld. Ermöglicht sowohl Singleplayer- als auch Multiplayer-Modus, bei dem Benutzer ihre finanziellen Strategien testen können."
-
+description: "A new Flutter project."
 publish_to: 'none'
 version: 0.1.0
 
