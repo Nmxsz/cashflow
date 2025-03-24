@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/game_room.dart';
 import '../models/player_data.dart';
 import '../services/firebase_service.dart';
 import 'dart:math';
+import 'dart:async';
 
 class MultiplayerProvider with ChangeNotifier {
   GameRoom? _currentRoom;
@@ -12,6 +14,10 @@ class MultiplayerProvider with ChangeNotifier {
   final Random _random = Random();
   final FirebaseService _firebaseService = FirebaseService();
   String? _currentPlayerId;
+
+  final StreamController<void> _gameStartedController = StreamController<void>.broadcast();
+  
+  Stream<void> get onGameStarted => _gameStartedController.stream;
 
   GameRoom? get currentRoom => _currentRoom;
   bool get isConnecting => _isConnecting;
@@ -101,12 +107,16 @@ class MultiplayerProvider with ChangeNotifier {
 
       // Prüfe, ob der Raum existiert
       final roomExists = await _firebaseService.roomExists(roomCode);
+      print('Room exists: $roomExists'); // Debugging-Log
+
       if (!roomExists) {
         throw Exception('Raum nicht gefunden oder Code ungültig');
       }
 
       // Hole den Raum
       final room = await _firebaseService.getRoomByCode(roomCode);
+      print('Room fetched: $room'); // Debugging-Log
+
       if (room == null) {
         throw Exception('Raum nicht gefunden');
       }
@@ -143,6 +153,7 @@ class MultiplayerProvider with ChangeNotifier {
         notifyListeners();
       } else {
         // Raum wurde gelöscht
+        print('Room has been deleted or does not exist anymore'); // Debugging-Log
         _currentRoom = null;
         _error = 'Der Raum existiert nicht mehr';
         notifyListeners();
@@ -171,11 +182,28 @@ class MultiplayerProvider with ChangeNotifier {
       await _firebaseService.updateRoom(updatedRoom);
       _currentRoom = updatedRoom;
       notifyListeners();
+
+      // Benachrichtige alle Spieler über den Spielstart
+      _gameStartedController.add(null);
     } catch (e) {
       _error = 'Fehler beim Starten des Spiels: $e';
       notifyListeners();
       rethrow;
     }
+  }
+
+  void notifyPlayers() {
+    // Hier können Sie die Logik implementieren, um alle Spieler zu benachrichtigen
+    // Dies könnte ein Stream oder eine andere Methode sein, um die Spieler zu informieren
+    for (var player in _currentRoom!.players) {
+      // Beispiel: Senden einer Nachricht an jeden Spieler
+      sendMessageToPlayer(player.id, 'Das Spiel hat begonnen!');
+    }
+  }
+
+  void sendMessageToPlayer(String playerId, String message) {
+    // Implementieren Sie die Logik, um eine Nachricht an den Spieler zu senden
+    // Dies könnte über WebSockets, Firebase oder eine andere Methode erfolgen
   }
 
   // Verlasse den Raum
@@ -243,5 +271,11 @@ class MultiplayerProvider with ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _gameStartedController.close();
+    super.dispose();
   }
 }

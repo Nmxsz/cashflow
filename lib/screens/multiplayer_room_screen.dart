@@ -367,7 +367,16 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
     super.initState();
     _multiplayerProvider = Provider.of<MultiplayerProvider>(context, listen: false);
     
-    // Versuche sofort eine Verbindung herzustellen
+    // Listen for game start notifications
+    _multiplayerProvider.onGameStarted.listen((_) {
+      // Navigate to the overview when the game starts
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
+    });
+
+    // Try to connect to the room
     _connectToRoom();
   }
 
@@ -432,8 +441,10 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
 
   @override
   void dispose() {
-    // Wenn der Bildschirm geschlossen wird, verlasse den Raum
-    if (_multiplayerProvider.isInRoom) {
+    // Wenn der Bildschirm geschlossen wird und das Spiel noch nicht gestartet wurde,
+    // verlasse den Raum. Wenn das Spiel bereits läuft, behalte den Raum.
+    if (_multiplayerProvider.isInRoom && 
+        _multiplayerProvider.currentRoom?.status != GameRoomStatus.playing) {
       _multiplayerProvider.leaveRoom();
     }
     super.dispose();
@@ -485,6 +496,26 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
             final canStart = room?.canStart ?? false;
             final error = multiplayerProvider.error;
             
+            // Prüfe auf Spielstart-Status und navigiere, wenn nicht-Host und Spiel gestartet
+            if (room?.status == GameRoomStatus.playing && !isHost && !_isGameStarted) {
+              _isGameStarted = true; // Verhindert mehrfaches Navigieren
+              
+              // Setze Spielerdaten und navigiere zum HomeScreen
+              final currentPlayer = multiplayerProvider.currentPlayer;
+              if (currentPlayer != null) {
+                Provider.of<PlayerProvider>(context, listen: false)
+                    .setPlayerData(currentPlayer);
+              }
+              
+              // Verzögerte Navigation, um Render-Fehler zu vermeiden
+              Future.microtask(() {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (route) => false,
+                );
+              });
+            }
+            
             if (error != null) {
               // Zeige Fehler als Snackbar an
               Future.microtask(() {
@@ -523,6 +554,13 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                             MaterialPageRoute(builder: (context) => const HomeScreen()),
                             (route) => false,
                           );
+                          
+                          // Hier fügen wir die Logik hinzu, um alle Spieler zur Übersicht zu leiten
+                          for (var player in _players) {
+                            // Logik um sicherzustellen, dass alle Spieler zur Übersicht geleitet werden
+                            // Dies könnte eine Methode sein, die die Spieler zur Übersicht leitet
+                            // z.B. _navigateToOverview(player);
+                          }
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Fehler beim Starten: $e')),
