@@ -65,7 +65,7 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
     );
   }
 
-  void _createRoomWithName(String playerName) {
+  void _createRoomWithName(String playerName) async {
     setState(() => _isCreatingRoom = true);
 
     final multiplayerProvider =
@@ -74,6 +74,35 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
     // Benutze die öffentliche Methode, die für Abwärtskompatibilität beibehalten wird
     final roomCode = multiplayerProvider.generateUniqueRoomCode();
 
+    // Erstelle einen temporären Spieler für die Raumerstellung
+    final player = PlayerData(
+      id: const Uuid().v4(),
+      name: playerName,
+      profession: 'Spieler',
+      salary: 0,
+      savings: 0,
+      assets: [],
+      liabilities: [],
+      expenses: [],
+      totalExpenses: 0,
+      cashflow: 0,
+      costPerChild: 0,
+    );
+
+    // Erstelle den Raum sofort in der Datenbank mit dem generierten Code
+    try {
+      await multiplayerProvider.createRoom(player, roomCode: roomCode);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Raum mit Code $roomCode erstellt!'))
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler beim Erstellen des Raums: $e'))
+      );
+      setState(() => _isCreatingRoom = false);
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -81,7 +110,7 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Teile diesen Code mit deinen Mitspielern:'),
+            Text('Dein Raum wurde erstellt mit dem Code:'),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -101,6 +130,8 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            const Text('Teile diesen Code mit deinen Mitspielern.'),
           ],
         ),
         actions: [
@@ -114,6 +145,8 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
         ],
       ),
     );
+    
+    setState(() => _isCreatingRoom = false);
   }
 
   void _joinRoom() {
@@ -287,7 +320,7 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
     Future.delayed(Duration.zero, () {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Firebase-Verbindung hergestellt - Multiplayer ist aktiviert'),
+          content: Text('Raum verbunden'),
           duration: Duration(seconds: 3),
         ),
       );
@@ -300,7 +333,7 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
     if (!_hasInitialized) {
       _hasInitialized = true;
       // Füge den Spieler hinzu und zeige Profil-Setup
-      _addPlayer();
+      //_addPlayer();
     }
   }
 
@@ -313,7 +346,7 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
     super.dispose();
   }
 
-  void _addPlayer() {
+  void _addPlayer() async {
     final player = PlayerData(
       id: const Uuid().v4(),
       name: widget.playerName,
@@ -332,6 +365,34 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
       _players = [player];
     });
     
+    // Prüfe, ob der Raum bereits existiert oder einem Raum beigetreten werden soll
+    try {
+      if (widget.roomCode.length == 6) {
+        // Wenn Beitritt zu bestehendem Raum
+        if (!_multiplayerProvider.isInRoom) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Betrete Raum...')),
+          );
+          
+          await _multiplayerProvider.joinRoom(widget.roomCode, player);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Raum mit Code ${widget.roomCode} beigetreten!')),
+          );
+        }
+      } else if (!_multiplayerProvider.isInRoom) {
+        // Wenn Raum nicht existiert - dieser Fall sollte für die Raumerstellung nicht mehr vorkommen,
+        // da der Raum bereits in _createRoomWithName erstellt wurde
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verbinde mit bestehendem Raum...')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler bei der Verbindung: $e')),
+      );
+    }
+    
+    // Dann zeige das Profil-Setup
     _showProfileSetupDialog(player);
   }
 
@@ -347,8 +408,19 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                 _players = [updatedPlayer];
               });
               
-              // Versuche, einen Raum zu erstellen oder beizutreten
-              _connectToRoom(updatedPlayer);
+              // Aktualisiere den Spieler im bestehenden Raum
+              if (_multiplayerProvider.isInRoom) {
+                try {
+                  await _multiplayerProvider.updatePlayerInRoom(updatedPlayer);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Spielerprofil aktualisiert!')),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Fehler beim Aktualisieren des Profils: $e')),
+                  );
+                }
+              }
               
               Navigator.pop(context); // Navigiere zurück zum GameRoom
             },
@@ -356,53 +428,6 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
         ),
       );
     });
-  }
-
-  Future<void> _connectToRoom(PlayerData player) async {
-    try {
-      if (_multiplayerProvider.isInRoom) {
-        // Bereits in einem Raum, nichts tun
-        return;
-      }
-      
-      // Versuche, Raum zu erstellen oder beizutreten basierend auf dem Code
-      if (_multiplayerProvider.currentRoom == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verbinde zum Raum...')),
-        );
-        
-        if (widget.roomCode.length == 6) {
-          try {
-            await _multiplayerProvider.joinRoom(widget.roomCode, player);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Erfolgreich beigetreten!')),
-            );
-          } catch (e) {
-            try {
-              // Wenn Beitritt fehlschlägt, versuche den Raum zu erstellen
-              await _multiplayerProvider.createRoom(player);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Raum erstellt!')),
-              );
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Verbindungsfehler: $e')),
-              );
-            }
-          }
-        } else {
-          // Erstelle einen neuen Raum
-          await _multiplayerProvider.createRoom(player);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Raum erstellt!')),
-          );
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fehler: $e')),
-      );
-    }
   }
 
   @override
@@ -500,11 +525,11 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                   itemBuilder: (context, index) {
                     final player = players[index];
                     final isCurrentPlayer = player.id == multiplayerProvider.currentPlayer?.id;
-                    
+                    print(isCurrentPlayer);
                     return ListTile(
                       leading: CircleAvatar(
                         child: Text(player.name[0]),
-                        backgroundColor: isCurrentPlayer ? Theme.of(context).primaryColor : null,
+                        backgroundColor: isCurrentPlayer ? Colors.blue : Colors.white,
                       ),
                       title: Text(
                         player.name,

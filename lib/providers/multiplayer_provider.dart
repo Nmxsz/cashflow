@@ -60,16 +60,16 @@ class MultiplayerProvider with ChangeNotifier {
   }
 
   // Erstelle einen neuen Raum
-  Future<void> createRoom(PlayerData host) async {
+  Future<void> createRoom(PlayerData host, {String? roomCode}) async {
     try {
       _isConnecting = true;
       _error = null;
       notifyListeners();
 
-      final roomCode = generateRoomCode();
+      final actualRoomCode = roomCode ?? generateRoomCode();
       final room = GameRoom(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        code: roomCode,
+        code: actualRoomCode,
         host: host,
         players: [host],
         createdAt: DateTime.now(),
@@ -80,7 +80,7 @@ class MultiplayerProvider with ChangeNotifier {
       _currentPlayerId = host.id;
 
       // Starte Listener für Raumänderungen
-      _startRoomListener(roomCode);
+      _startRoomListener(actualRoomCode);
 
       _isConnecting = false;
       notifyListeners();
@@ -193,6 +193,36 @@ class MultiplayerProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _error = 'Fehler beim Verlassen des Raums: $e';
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  // Aktualisiere einen Spieler im Raum
+  Future<void> updatePlayerInRoom(PlayerData updatedPlayer) async {
+    try {
+      if (_currentRoom == null || _currentPlayerId == null) return;
+      
+      final roomCode = _currentRoom!.code;
+      
+      // Aktualisiere den Spieler im Raum
+      final updatedPlayers = _currentRoom!.players.map((player) {
+        return player.id == updatedPlayer.id ? updatedPlayer : player;
+      }).toList();
+      
+      // Aktualisiere Host, falls es der Host ist
+      final updatedHost = _currentRoom!.host.id == updatedPlayer.id ? updatedPlayer : _currentRoom!.host;
+      
+      final updatedRoom = _currentRoom!.copyWith(
+        players: updatedPlayers,
+        host: updatedHost,
+      );
+      
+      await _firebaseService.updateRoom(updatedRoom);
+      _currentRoom = updatedRoom;
+      notifyListeners();
+    } catch (e) {
+      _error = 'Fehler beim Aktualisieren des Spielers: $e';
       notifyListeners();
       rethrow;
     }
