@@ -12,6 +12,7 @@ class PlayerData {
   int costPerChild;
   int savings;
   int passiveIncome;
+  bool isReady;
   List<Asset> assets;
   List<Liability> liabilities;
   List<Expense> expenses;
@@ -26,6 +27,7 @@ class PlayerData {
     required this.costPerChild,
     this.savings = 0,
     this.passiveIncome = 0,
+    this.isReady = false,
     this.assets = const [],
     this.liabilities = const [],
     this.expenses = const [],
@@ -128,6 +130,7 @@ class PlayerData {
     int? costPerChild,
     int? savings,
     int? passiveIncome,
+    bool? isReady,
     List<Asset>? assets,
     List<Liability>? liabilities,
     List<Expense>? expenses,
@@ -142,6 +145,7 @@ class PlayerData {
       costPerChild: costPerChild ?? this.costPerChild,
       savings: savings ?? this.savings,
       passiveIncome: passiveIncome ?? this.passiveIncome,
+      isReady: isReady ?? this.isReady,
       assets: assets ?? this.assets,
       liabilities: liabilities ?? this.liabilities,
       expenses: expenses ?? this.expenses,
@@ -159,6 +163,7 @@ class PlayerData {
       'costPerChild': costPerChild,
       'savings': savings,
       'passiveIncome': passiveIncome,
+      'isReady': isReady,
       'assets': assets.map((a) => a.toJson()).toList(),
       'liabilities': liabilities.map((l) => l.toJson()).toList(),
       'expenses': expenses.map((e) => e.toJson()).toList(),
@@ -176,6 +181,7 @@ class PlayerData {
       costPerChild: json['costPerChild'] as int,
       savings: json['savings'] as int,
       passiveIncome: json['passiveIncome'] as int,
+      isReady: json['isReady'] as bool? ?? false,
       assets: (json['assets'] as List)
           .map((a) => Asset.fromJson(a as Map<String, dynamic>))
           .toList(),

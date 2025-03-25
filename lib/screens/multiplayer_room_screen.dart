@@ -639,22 +639,26 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                                   ),
                                 ),
                                 subtitle: Text(
-                                  player.salary > 0
+                                  player.isReady
                                       ? 'Bereit'
                                       : 'Profil erstellen',
                                   style: TextStyle(
-                                    color: player.salary > 0
+                                    color: player.isReady
                                         ? Colors.green
                                         : Colors.orange,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                trailing: isCurrentPlayer && player.salary == 0
+                                trailing: isCurrentPlayer
                                     ? ElevatedButton.icon(
                                         icon: const Icon(Icons.edit),
-                                        label: const Text('Profil erstellen'),
-                                        onPressed: () =>
-                                            _showProfileSetupDialog(player),
+                                        label: Text(player.isReady
+                                            ? 'Profil bearbeiten'
+                                            : 'Profil erstellen'),
+                                        onPressed: () {
+                                          player.isReady = false;
+                                          _showProfileSetupDialog(player);
+                                        },
                                       )
                                     : null,
                               );

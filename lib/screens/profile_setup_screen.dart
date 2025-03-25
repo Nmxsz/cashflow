@@ -259,6 +259,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         costPerChild: costPerChild,
         expenses: expenses,
         liabilities: liabilities,
+        isReady: true,
       );
 
       // Rufe nur den Callback auf
