@@ -74,7 +74,7 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
 
     final multiplayerProvider =
         Provider.of<MultiplayerProvider>(context, listen: false);
-    
+
     // Benutze die öffentliche Methode, die für Abwärtskompatibilität beibehalten wird
     final roomCode = multiplayerProvider.generateUniqueRoomCode();
 
@@ -97,12 +97,10 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
     try {
       await multiplayerProvider.createRoom(player, roomCode: roomCode);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Raum mit Code $roomCode erstellt!'))
-      );
+          SnackBar(content: Text('Raum mit Code $roomCode erstellt!')));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fehler beim Erstellen des Raums: $e'))
-      );
+          SnackBar(content: Text('Fehler beim Erstellen des Raums: $e')));
       setState(() => _isCreatingRoom = false);
       return;
     }
@@ -149,7 +147,7 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
         ],
       ),
     );
-    
+
     setState(() => _isCreatingRoom = false);
   }
 
@@ -178,15 +176,15 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
               final code = _roomCodeController.text.toUpperCase();
               if (code.length == 6) {
                 Navigator.of(context).pop();
-                
+
                 setState(() {
-                  _isCreatingRoom = true; 
+                  _isCreatingRoom = true;
                   _loadingMessage = 'Raum wird gesucht...';
                 });
-                
+
                 final multiplayerProvider =
                     Provider.of<MultiplayerProvider>(context, listen: false);
-                
+
                 try {
                   final exists = await multiplayerProvider.roomExists(code);
                   if (exists) {
@@ -194,7 +192,8 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text('Ungültiger Code oder Raum existiert nicht mehr')),
+                          content: Text(
+                              'Ungültiger Code oder Raum existiert nicht mehr')),
                     );
                   }
                 } catch (e) {
@@ -235,12 +234,12 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
             onPressed: () {
               if (_nameController.text.isNotEmpty) {
                 Navigator.of(context).pop();
-                
+
                 setState(() {
                   _isCreatingRoom = true;
                   _loadingMessage = 'Trete Raum bei...';
                 });
-                
+
                 _navigateToGameRoom(
                     roomCode: roomCode, playerName: _nameController.text);
               }
@@ -365,8 +364,9 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
   @override
   void initState() {
     super.initState();
-    _multiplayerProvider = Provider.of<MultiplayerProvider>(context, listen: false);
-    
+    _multiplayerProvider =
+        Provider.of<MultiplayerProvider>(context, listen: false);
+
     // Listen for game start notifications
     _multiplayerProvider.onGameStarted.listen((_) {
       // Navigate to the overview when the game starts
@@ -398,22 +398,22 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
           cashflow: 0,
           costPerChild: 0,
         );
-        
+
         setState(() {
           _players = [player];
-          _loadingMessage = widget.roomCode.length == 6 
-              ? 'Trete Raum bei...' 
+          _loadingMessage = widget.roomCode.length == 6
+              ? 'Trete Raum bei...'
               : 'Verbinde mit Raum...';
         });
-        
+
         // Versuche, einen Raum zu betreten oder mit einem existierenden zu verbinden
         if (widget.roomCode.length == 6) {
           await _multiplayerProvider.joinRoom(widget.roomCode, player);
         }
       }
-      
+
       setState(() => _isLoading = false);
-      
+
       // Zeige Erfolgsmeldung bei erfolgreicher Verbindung
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -421,7 +421,6 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
           duration: Duration(seconds: 3),
         ),
       );
-      
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -443,7 +442,7 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
   void dispose() {
     // Wenn der Bildschirm geschlossen wird und das Spiel noch nicht gestartet wurde,
     // verlasse den Raum. Wenn das Spiel bereits läuft, behalte den Raum.
-    if (_multiplayerProvider.isInRoom && 
+    if (_multiplayerProvider.isInRoom &&
         _multiplayerProvider.currentRoom?.status != GameRoomStatus.playing) {
       _multiplayerProvider.leaveRoom();
     }
@@ -461,21 +460,24 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
               setState(() {
                 _players = [updatedPlayer];
               });
-              
+
               // Aktualisiere den Spieler im bestehenden Raum
               if (_multiplayerProvider.isInRoom) {
                 try {
                   await _multiplayerProvider.updatePlayerInRoom(updatedPlayer);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Spielerprofil aktualisiert!')),
+                    const SnackBar(
+                        content: Text('Spielerprofil aktualisiert!')),
                   );
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Fehler beim Aktualisieren des Profils: $e')),
+                    SnackBar(
+                        content:
+                            Text('Fehler beim Aktualisieren des Profils: $e')),
                   );
                 }
               }
-              
+
               Navigator.pop(context); // Navigiere zurück zum GameRoom
             },
           ),
@@ -495,18 +497,20 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
             final isHost = multiplayerProvider.isHost;
             final canStart = room?.canStart ?? false;
             final error = multiplayerProvider.error;
-            
+
             // Prüfe auf Spielstart-Status und navigiere, wenn nicht-Host und Spiel gestartet
-            if (room?.status == GameRoomStatus.playing && !isHost && !_isGameStarted) {
+            if (room?.status == GameRoomStatus.playing &&
+                !isHost &&
+                !_isGameStarted) {
               _isGameStarted = true; // Verhindert mehrfaches Navigieren
-              
+
               // Setze Spielerdaten und navigiere zum HomeScreen
               final currentPlayer = multiplayerProvider.currentPlayer;
               if (currentPlayer != null) {
                 Provider.of<PlayerProvider>(context, listen: false)
                     .setPlayerData(currentPlayer);
               }
-              
+
               // Verzögerte Navigation, um Render-Fehler zu vermeiden
               Future.microtask(() {
                 Navigator.of(context).pushAndRemoveUntil(
@@ -515,7 +519,7 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                 );
               });
             }
-            
+
             if (error != null) {
               // Zeige Fehler als Snackbar an
               Future.microtask(() {
@@ -525,36 +529,40 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                 multiplayerProvider.clearError();
               });
             }
-            
+
             // Wenn wir jetzt verbunden sind und vorher geladen haben, aktualisiere Status
             if (multiplayerProvider.isInRoom && _isLoading) {
               Future.microtask(() {
                 setState(() => _isLoading = false);
               });
             }
-            
+
             return Scaffold(
               appBar: AppBar(
                 title: const Text('Spielraum'),
                 actions: [
                   if (canStart && isHost)
-                    TextButton.icon(
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Spiel starten'),
                       onPressed: () async {
                         try {
                           await multiplayerProvider.startGame();
                           // Setze die Spielerdaten für den aktuellen Spieler
-                          final currentPlayer = multiplayerProvider.currentPlayer;
+                          final currentPlayer =
+                              multiplayerProvider.currentPlayer;
                           if (currentPlayer != null) {
                             Provider.of<PlayerProvider>(context, listen: false)
                                 .setPlayerData(currentPlayer);
                           }
-                          
+
                           // Navigiere zum HomeScreen und entferne alle vorherigen Screens
                           Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => const HomeScreen()),
+                            MaterialPageRoute(
+                                builder: (context) => const HomeScreen()),
                             (route) => false,
                           );
-                          
+
                           // Hier fügen wir die Logik hinzu, um alle Spieler zur Übersicht zu leiten
                           for (var player in _players) {
                             // Logik um sicherzustellen, dass alle Spieler zur Übersicht geleitet werden
@@ -567,11 +575,6 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                           );
                         }
                       },
-                      icon: const Icon(Icons.play_arrow, color: Colors.white),
-                      label: const Text(
-                        'Spiel starten',
-                        style: TextStyle(color: Colors.white),
-                      ),
                     ),
                 ],
               ),
@@ -599,7 +602,8 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                         IconButton(
                           icon: const Icon(Icons.copy),
                           onPressed: () {
-                            Clipboard.setData(ClipboardData(text: room?.code ?? widget.roomCode));
+                            Clipboard.setData(ClipboardData(
+                                text: room?.code ?? widget.roomCode));
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Code kopiert!')),
                             );
@@ -616,23 +620,32 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                             itemCount: players.length,
                             itemBuilder: (context, index) {
                               final player = players[index];
-                              final isCurrentPlayer = player.id == multiplayerProvider.currentPlayer?.id;
-                              
+                              final isCurrentPlayer = player.id ==
+                                  multiplayerProvider.currentPlayer?.id;
+
                               return ListTile(
                                 leading: CircleAvatar(
                                   child: Text(player.name[0]),
-                                  backgroundColor: isCurrentPlayer ? Colors.blue : Colors.white,
+                                  backgroundColor: isCurrentPlayer
+                                      ? Colors.blue
+                                      : Colors.white,
                                 ),
                                 title: Text(
                                   player.name,
                                   style: TextStyle(
-                                    fontWeight: isCurrentPlayer ? FontWeight.bold : FontWeight.normal,
+                                    fontWeight: isCurrentPlayer
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                                   ),
                                 ),
                                 subtitle: Text(
-                                  player.salary > 0 ? 'Bereit' : 'Profil erstellen',
+                                  player.salary > 0
+                                      ? 'Bereit'
+                                      : 'Profil erstellen',
                                   style: TextStyle(
-                                    color: player.salary > 0 ? Colors.green : Colors.orange,
+                                    color: player.salary > 0
+                                        ? Colors.green
+                                        : Colors.orange,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -640,7 +653,8 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                                     ? ElevatedButton.icon(
                                         icon: const Icon(Icons.edit),
                                         label: const Text('Profil erstellen'),
-                                        onPressed: () => _showProfileSetupDialog(player),
+                                        onPressed: () =>
+                                            _showProfileSetupDialog(player),
                                       )
                                     : null,
                               );
@@ -653,16 +667,15 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                       child: Column(
                         children: [
                           Text(
-                            isHost 
-                                ? 'Warte auf weitere Spieler...' 
+                            isHost
+                                ? 'Warte auf weitere Spieler...'
                                 : 'Warte auf den Host...',
                             style: TextStyle(
                               fontSize: 16,
                               fontStyle: FontStyle.italic,
                             ),
                           ),
-                          if (canStart && isHost)
-                            const SizedBox(height: 8),
+                          if (canStart && isHost) const SizedBox(height: 8),
                           if (canStart && isHost)
                             Text(
                               'Alle Spieler sind bereit!',
