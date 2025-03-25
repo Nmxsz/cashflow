@@ -81,6 +81,38 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     // Verbinde die Ausgaben-Controller mit den Verbindlichkeiten-Controllern
     _setupExpenseListeners();
+
+    // Fülle die Textfelder nur wenn es ein bestehendes Profil ist
+    if (widget.player.id.isNotEmpty) {
+      _nameController.text = widget.player.name;
+      _professionController.text = widget.player.profession;
+      _costPerChildController.text = widget.player.costPerChild.toString();
+      _salaryController.text = widget.player.salary.toString();
+      _savingsController.text = widget.player.savings.toString();
+
+      // Fülle die Ausgaben
+      for (var expense in widget.player.expenses) {
+        final index = _expenseNames.indexWhere((name) => name == expense.name);
+        if (index != -1) {
+          _expenseControllers[index].text = expense.amount.toString();
+        }
+      }
+
+      // Fülle die Verbindlichkeiten
+      for (var liability in widget.player.liabilities) {
+        final index =
+            _liabilityTypes.indexWhere((type) => type.$1 == liability.name);
+        if (index != -1) {
+          _liabilityAmountControllers[index].text =
+              liability.totalDebt.toString();
+          _liabilityPaymentControllers[index].text =
+              liability.monthlyPayment.toString();
+        }
+      }
+
+      // Berechne die Gesamtausgaben
+      _calculateTotalExpenses();
+    }
   }
 
   // Verbindet die Ausgaben mit den entsprechenden monatlichen Raten der Verbindlichkeiten

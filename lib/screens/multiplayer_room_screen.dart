@@ -388,7 +388,7 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
         final player = PlayerData(
           id: const Uuid().v4(),
           name: widget.playerName,
-          profession: 'Spieler',
+          profession: '',
           salary: 0,
           savings: 0,
           assets: [],
@@ -655,10 +655,8 @@ class _GameRoomScreenState extends State<GameRoomScreen> {
                                         label: Text(player.isReady
                                             ? 'Profil bearbeiten'
                                             : 'Profil erstellen'),
-                                        onPressed: () {
-                                          player.isReady = false;
-                                          _showProfileSetupDialog(player);
-                                        },
+                                        onPressed: () =>
+                                            _showProfileSetupDialog(player),
                                       )
                                     : null,
                               );
