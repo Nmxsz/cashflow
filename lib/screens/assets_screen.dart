@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/index.dart';
 import '../providers/player_provider.dart';
+import '../widgets/theme_toggle_button.dart';
 
 class AssetsScreen extends StatefulWidget {
   const AssetsScreen({Key? key}) : super(key: key);
@@ -634,6 +635,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
               onPressed: _resetForm,
               tooltip: 'Bearbeitung abbrechen',
             ),
+          const ThemeToggleButton(),
         ],
       ),
       body: Consumer<PlayerProvider>(

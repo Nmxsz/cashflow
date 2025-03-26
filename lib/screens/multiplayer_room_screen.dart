@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'profile_setup_screen.dart';
 import 'package:uuid/uuid.dart';
 import 'home_screen.dart';
+import '../widgets/theme_toggle_button.dart';
 
 class MultiplayerRoomScreen extends StatefulWidget {
   const MultiplayerRoomScreen({Key? key}) : super(key: key);
@@ -278,6 +279,9 @@ class _MultiplayerRoomScreenState extends State<MultiplayerRoomScreen> {
         Scaffold(
           appBar: AppBar(
             title: const Text('Multiplayer'),
+            actions: [
+              ThemeToggleButton(),
+            ],
           ),
           body: Center(
             child: Column(

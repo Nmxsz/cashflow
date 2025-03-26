@@ -5,6 +5,7 @@ import '../models/index.dart';
 import '../services/player_service.dart';
 import '../providers/player_provider.dart';
 import '../providers/theme_provider.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'profile_setup_screen.dart';
 import 'assets_screen.dart';
 import 'liabilities_screen.dart';
@@ -433,6 +434,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Scaffold(
               backgroundColor: Colors.transparent,
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                actions: [
+                  const ThemeToggleButton(),
+                ],
+              ),
               body: Center(
                 child: Card(
                   margin: const EdgeInsets.all(16),
@@ -523,23 +530,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 tooltip: 'Neues Spiel',
               ),
-              IconButton(
-                icon: Consumer<ThemeProvider>(
-                  builder: (context, themeProvider, child) {
-                    final isDark =
-                        Theme.of(context).brightness == Brightness.dark;
-                    return Icon(
-                      isDark ? Icons.light_mode : Icons.dark_mode,
-                      color: isDark ? Colors.yellow : Colors.grey[800],
-                    );
-                  },
-                ),
-                onPressed: () {
-                  Provider.of<ThemeProvider>(context, listen: false)
-                      .toggleTheme();
-                },
-                tooltip: 'Theme wechseln',
-              ),
+              const ThemeToggleButton(),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
                 tooltip: 'Menü öffnen',

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/player_provider.dart';
 import '../models/liability.dart';
 import '../screens/home_screen.dart'; // Import für den homeScreenKey
+import '../widgets/theme_toggle_button.dart'; // Import für ThemeToggleButton
 
 class PaydayScreen extends StatelessWidget {
   const PaydayScreen({Key? key}) : super(key: key);
@@ -53,6 +54,9 @@ class PaydayScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Zahltag'),
+        actions: [
+          ThemeToggleButton(),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

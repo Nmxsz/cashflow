@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../models/index.dart';
 import '../providers/player_provider.dart';
+import '../widgets/theme_toggle_button.dart';
 
 class ExpensesScreen extends StatelessWidget {
   const ExpensesScreen({Key? key}) : super(key: key);
@@ -10,6 +13,9 @@ class ExpensesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ausgaben'),
+        actions: [
+          ThemeToggleButton(),
+        ],
       ),
       body: Consumer<PlayerProvider>(
         builder: (context, playerProvider, child) {

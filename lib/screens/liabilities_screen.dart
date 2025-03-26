@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/index.dart';
 import '../providers/player_provider.dart';
+import '../widgets/theme_toggle_button.dart';
 
 class LiabilitiesScreen extends StatefulWidget {
   const LiabilitiesScreen({Key? key}) : super(key: key);
@@ -310,6 +311,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
               onPressed: _resetForm,
               tooltip: 'Bearbeitung abbrechen',
             ),
+          const ThemeToggleButton(),
         ],
       ),
       body: Consumer<PlayerProvider>(

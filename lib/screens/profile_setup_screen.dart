@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/index.dart';
 import '../providers/player_provider.dart';
+import '../widgets/theme_toggle_button.dart';
 import 'package:uuid/uuid.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -304,6 +305,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil einrichten'),
+        actions: [
+          const ThemeToggleButton(),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
