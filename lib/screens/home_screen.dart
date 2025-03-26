@@ -12,6 +12,7 @@ import 'liabilities_screen.dart';
 import 'expenses_screen.dart';
 import 'payday_screen.dart';
 import 'multiplayer_room_screen.dart';
+import 'schnickschnack_screen.dart';
 import 'package:uuid/uuid.dart';
 
 // Global key für den Zugriff auf den HomeScreen-State
@@ -43,6 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case 'add_money':
         _showAddMoneyDialog(context);
+        break;
+      case 'schnickschnack':
+        _showSchnickschnackDialog(context);
         break;
     }
   }
@@ -418,6 +422,112 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showSchnickschnackDialog(BuildContext context) {
+    final _formKey = GlobalKey<FormState>();
+    final _nameController = TextEditingController();
+    final _costController = TextEditingController();
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Schnickschnack kaufen'),
+        content: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name des Schnickschnacks',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Bitte geben Sie einen Namen ein';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _costController,
+                decoration: const InputDecoration(
+                  labelText: 'Kosten (€)',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Bitte geben Sie die Kosten ein';
+                  }
+                  if (int.parse(value) <= 0) {
+                    return 'Der Betrag muss größer als 0 sein';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (_formKey.currentState?.validate() ?? false) {
+                final name = _nameController.text;
+                final cost = int.parse(_costController.text);
+
+                // Prüfe, ob genügend Ersparnisse vorhanden sind
+                if (playerProvider.playerData!.savings < cost) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Nicht genügend Ersparnisse!'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  // Füge Schnickschnack hinzu
+                  await playerProvider.addSchnickschnack(Schnickschnack(
+                    id: const Uuid().v4(),
+                    name: name,
+                    cost: cost,
+                    purchaseDate: DateTime.now(),
+                  ));
+
+                  Navigator.of(context).pop();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('$name für $cost € gekauft'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Fehler beim Kauf: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Kaufen'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PlayerProvider>(
@@ -566,6 +676,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
+                  const PopupMenuItem<String>(
+                    value: 'schnickschnack',
+                    child: Row(
+                      children: [
+                        Icon(Icons.shopping_cart),
+                        SizedBox(width: 8),
+                        Text('Schnickschnack kaufen'),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -678,7 +798,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         MaterialPageRoute(
                             builder: (context) => const PaydayScreen()),
                       ),
-                    )
+                    ),
+                    _buildActionCard(
+                      context,
+                      'Schnickschnack',
+                      Icons.shopping_bag,
+                      Colors.purple,
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SchnickschnackScreen()),
+                      ),
+                    ),
                   ],
                 ),
               ],

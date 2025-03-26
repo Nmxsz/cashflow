@@ -1,6 +1,7 @@
 import 'asset.dart';
 import 'liability.dart';
 import 'expense.dart';
+import 'schnickschnack.dart';
 
 class PlayerData {
   final String id;
@@ -16,6 +17,7 @@ class PlayerData {
   List<Asset> assets;
   List<Liability> liabilities;
   List<Expense> expenses;
+  List<Schnickschnack> schnickschnackItems;
 
   PlayerData({
     required this.id,
@@ -31,6 +33,7 @@ class PlayerData {
     this.assets = const [],
     this.liabilities = const [],
     this.expenses = const [],
+    this.schnickschnackItems = const [],
   });
 
   // Berechne das Nettovermögen
@@ -120,6 +123,20 @@ class PlayerData {
     updateCashflow();
   }
 
+  // Fügt einen Schnickschnack hinzu
+  void addSchnickschnack(Schnickschnack item) {
+    schnickschnackItems.add(item);
+    // Reduziere die Ersparnisse um die Kosten des Schnickschnacks
+    savings -= item.cost;
+  }
+
+  // Entfernt einen Schnickschnack
+  void removeSchnickschnack(Schnickschnack item) {
+    schnickschnackItems.remove(item);
+    // Optional: Wenn man möchte, dass beim Entfernen der Betrag zurückgegeben wird
+    // savings += item.cost;
+  }
+
   PlayerData copyWith({
     String? id,
     String? name,
@@ -134,6 +151,7 @@ class PlayerData {
     List<Asset>? assets,
     List<Liability>? liabilities,
     List<Expense>? expenses,
+    List<Schnickschnack>? schnickschnackItems,
   }) {
     return PlayerData(
       id: id ?? this.id,
@@ -149,6 +167,7 @@ class PlayerData {
       assets: assets ?? this.assets,
       liabilities: liabilities ?? this.liabilities,
       expenses: expenses ?? this.expenses,
+      schnickschnackItems: schnickschnackItems ?? this.schnickschnackItems,
     );
   }
 
@@ -167,6 +186,8 @@ class PlayerData {
       'assets': assets.map((a) => a.toJson()).toList(),
       'liabilities': liabilities.map((l) => l.toJson()).toList(),
       'expenses': expenses.map((e) => e.toJson()).toList(),
+      'schnickschnackItems':
+          schnickschnackItems.map((s) => s.toJson()).toList(),
     };
   }
 
@@ -191,6 +212,11 @@ class PlayerData {
       expenses: (json['expenses'] as List)
           .map((e) => Expense.fromJson(e as Map<String, dynamic>))
           .toList(),
+      schnickschnackItems: json['schnickschnackItems'] != null
+          ? (json['schnickschnackItems'] as List)
+              .map((s) => Schnickschnack.fromJson(s as Map<String, dynamic>))
+              .toList()
+          : [],
     );
   }
 

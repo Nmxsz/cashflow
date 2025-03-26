@@ -150,4 +150,27 @@ class PlayerProvider extends ChangeNotifier {
     _playerData = null;
     notifyListeners();
   }
+
+  // Fügt einen neuen Schnickschnack hinzu
+  Future<void> addSchnickschnack(Schnickschnack item) async {
+    if (_playerData != null) {
+      try {
+        _playerData =
+            await _playerService.addSchnickschnack(_playerData!, item);
+        notifyListeners();
+      } catch (e) {
+        print('Fehler beim Hinzufügen von Schnickschnack: $e');
+        // Hier könnte man einen Error-Callback implementieren
+      }
+    }
+  }
+
+  // Entfernt einen Schnickschnack
+  Future<void> removeSchnickschnack(Schnickschnack item) async {
+    if (_playerData != null) {
+      _playerData =
+          await _playerService.removeSchnickschnack(_playerData!, item);
+      notifyListeners();
+    }
+  }
 }

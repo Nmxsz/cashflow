@@ -233,4 +233,30 @@ class PlayerService {
     await savePlayerData(playerData);
     return playerData;
   }
+
+  // Fügt einen neuen Schnickschnack hinzu
+  Future<PlayerData> addSchnickschnack(
+      PlayerData playerData, Schnickschnack item) async {
+    // Prüfen, ob genügend Ersparnisse vorhanden sind
+    if (playerData.savings < item.cost) {
+      throw Exception('Nicht genügend Ersparnisse für den Kauf');
+    }
+
+    // Füge den Schnickschnack zur Liste hinzu
+    playerData.schnickschnackItems.add(item);
+
+    // Reduziere die Ersparnisse
+    playerData.savings -= item.cost;
+
+    await savePlayerData(playerData);
+    return playerData;
+  }
+
+  // Entfernt einen Schnickschnack
+  Future<PlayerData> removeSchnickschnack(
+      PlayerData playerData, Schnickschnack item) async {
+    playerData.schnickschnackItems.remove(item);
+    await savePlayerData(playerData);
+    return playerData;
+  }
 }
