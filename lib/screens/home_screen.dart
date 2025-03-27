@@ -15,6 +15,8 @@ import 'multiplayer_room_screen.dart';
 import 'schnickschnack_screen.dart';
 import 'package:uuid/uuid.dart';
 import '../widgets/bankruptcy_dialog.dart';
+import '../providers/multiplayer_provider.dart';
+import 'player_overview_screen.dart';
 
 // Global key für den Zugriff auf den HomeScreen-State
 final GlobalKey<_HomeScreenState> homeScreenKey = GlobalKey<_HomeScreenState>();
@@ -665,6 +667,57 @@ class _HomeScreenState extends State<HomeScreen> {
           appBar: AppBar(
             title: const Text('Cashflow Tracker'),
             actions: [
+              Consumer<MultiplayerProvider>(
+                builder: (context, multiplayerProvider, child) {
+                  if (!multiplayerProvider.isInRoom)
+                    return const SizedBox.shrink();
+
+                  return IconButton(
+                    icon: const Icon(Icons.people),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Spieler auswählen'),
+                          content: SizedBox(
+                            width: double.maxFinite,
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: multiplayerProvider
+                                  .currentRoom!.players.length,
+                              itemBuilder: (context, index) {
+                                final player = multiplayerProvider
+                                    .currentRoom!.players[index];
+                                return ListTile(
+                                  title: Text(player.name),
+                                  subtitle: Text(player.profession),
+                                  onTap: () {
+                                    Navigator.of(context).pop();
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            PlayerOverviewScreen(
+                                          playerId: player.id,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Schließen'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: () {
