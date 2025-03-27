@@ -332,6 +332,21 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
           (playerData.totalExpenses - reducedPayment),
     );
 
+    // Aktualisiere die Bankdarlehen-Zahlung in den Ausgaben
+    final bankLoanExpenseIndex = playerData.expenses.indexWhere(
+      (e) => e.type == ExpenseType.bankLoan,
+    );
+
+    if (bankLoanExpenseIndex != -1) {
+      final existingExpense = playerData.expenses[bankLoanExpenseIndex];
+      final updatedExpense = Expense(
+        name: 'Bankdarlehen Zahlung',
+        amount: existingExpense.amount - reducedPayment,
+        type: ExpenseType.bankLoan,
+      );
+      playerProvider.updateExpense(bankLoanExpenseIndex, updatedExpense);
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -397,6 +412,33 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
           } else {
             playerProvider.deleteExpense(expenseIndex);
             newTotalExpenses = playerData.totalExpenses - expense.amount;
+          }
+        } else if (liability.category == LiabilityCategory.bankLoan) {
+          // Bei Bankdarlehen: Prüfe, ob noch andere Bankdarlehen existieren
+          final remainingBankLoans = playerData.liabilities
+              .where((l) => l.category == LiabilityCategory.bankLoan)
+              .length;
+
+          if (remainingBankLoans <= 1) {
+            // Dies ist das letzte Bankdarlehen, lösche die Ausgabe
+            playerProvider.deleteExpense(expenseIndex);
+            newTotalExpenses = playerData.totalExpenses - expense.amount;
+          } else {
+            // Es gibt noch andere Bankdarlehen, aktualisiere die Ausgabe
+            final remainingBankLoanPayments = playerData.liabilities
+                .where((l) => l.category == LiabilityCategory.bankLoan)
+                .fold<int>(0, (sum, l) => sum + l.monthlyPayment);
+
+            playerProvider.updateExpense(
+              expenseIndex,
+              Expense(
+                name: 'Bankdarlehen Zahlung',
+                amount: remainingBankLoanPayments,
+                type: ExpenseType.bankLoan,
+              ),
+            );
+            newTotalExpenses =
+                playerData.totalExpenses - liability.monthlyPayment;
           }
         } else {
           playerProvider.deleteExpense(expenseIndex);

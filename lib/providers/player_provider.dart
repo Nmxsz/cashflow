@@ -112,10 +112,36 @@ class PlayerProvider extends ChangeNotifier {
       setBankruptcy(true);
     }
 
-    playerData!.expenses.add(expense);
-    playerData!.totalExpenses += expense.amount;
-    playerData!.cashflow = newCashflow;
+    // Wenn es sich um eine Bankdarlehen-Zahlung handelt, suche nach einer existierenden
+    if (expense.type == ExpenseType.bankLoan) {
+      final existingBankLoanIndex = playerData!.expenses.indexWhere(
+        (e) => e.type == ExpenseType.bankLoan,
+      );
 
+      if (existingBankLoanIndex != -1) {
+        // Aktualisiere die existierende Bankdarlehen-Zahlung
+        final existingExpense = playerData!.expenses[existingBankLoanIndex];
+        final updatedExpense = Expense(
+          name: 'Bankdarlehen Zahlung',
+          amount: existingExpense.amount + expense.amount,
+          type: ExpenseType.bankLoan,
+        );
+        playerData!.expenses[existingBankLoanIndex] = updatedExpense;
+        playerData!.totalExpenses = playerData!.totalExpenses -
+            existingExpense.amount +
+            updatedExpense.amount;
+      } else {
+        // Füge eine neue Bankdarlehen-Zahlung hinzu
+        playerData!.expenses.add(expense);
+        playerData!.totalExpenses += expense.amount;
+      }
+    } else {
+      // Für alle anderen Ausgaben: normaler Prozess
+      playerData!.expenses.add(expense);
+      playerData!.totalExpenses += expense.amount;
+    }
+
+    playerData!.cashflow = newCashflow;
     await _playerService.savePlayerData(playerData!);
     notifyListeners();
   }
