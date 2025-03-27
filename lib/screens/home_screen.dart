@@ -67,6 +67,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'divorce':
         _showDivorceDialog(context);
         break;
+      case 'court_hearing':
+        _showCourtHearingDialog(context);
+        break;
     }
   }
 
@@ -862,6 +865,79 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showCourtHearingDialog(BuildContext context) {
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    final playerData = playerProvider.playerData;
+
+    if (playerData == null) return;
+
+    // Berechne 50% der Ersparnisse
+    final courtAmount = (playerData.savings * 0.5).round();
+
+    // Prüfe, ob genügend Ersparnisse vorhanden sind
+    if (playerData.savings <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Du hast keine Ersparnisse für die Gerichtsverhandlung!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Gerichtsverhandlung'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Du musst vor Gericht erscheinen!'),
+            const SizedBox(height: 16),
+            Text('Deine Ersparnisse: ${playerData.savings} €'),
+            Text('Gerichtskosten: $courtAmount €'),
+            const SizedBox(height: 8),
+            const Text(
+              'Hinweis: Die Hälfte deiner Ersparnisse wird für die Gerichtskosten fällig.',
+              style: TextStyle(color: Colors.red),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Erstelle eine Kopie der Spielerdaten mit den aktualisierten Werten
+              final updatedPlayerData = playerData.copyWith(
+                savings: playerData.savings - courtAmount,
+              );
+
+              // Aktualisiere die Spielerdaten
+              playerProvider.setPlayerData(updatedPlayerData);
+
+              Navigator.of(context).pop();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content:
+                      Text('Du hast $courtAmount € Gerichtskosten bezahlt!'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Kosten zahlen'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PlayerProvider>(
@@ -1147,6 +1223,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icon(Icons.favorite_border, color: Colors.red),
                         SizedBox(width: 8),
                         Text('Scheidung'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'court_hearing',
+                    child: Row(
+                      children: [
+                        Icon(Icons.gavel, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Gerichtsverhandlung'),
                       ],
                     ),
                   ),
