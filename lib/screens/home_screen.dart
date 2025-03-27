@@ -58,6 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'arbeitslos':
         _showArbeitslosDialog(context);
         break;
+      case 'donate':
+        _showDonationDialog(context);
+        break;
     }
   }
 
@@ -643,6 +646,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showDonationDialog(BuildContext context) {
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    final playerData = playerProvider.playerData;
+
+    if (playerData == null) return;
+
+    // Berechne 10% der Ersparnisse
+    final donationAmount = (playerData.savings * 0.1).round();
+
+    // Prüfe, ob genügend Ersparnisse vorhanden sind
+    if (playerData.savings <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Du hast keine Ersparnisse zum Spenden!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Spenden'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Möchtest du 10% deiner Ersparnisse spenden?'),
+            const SizedBox(height: 16),
+            Text('Deine Ersparnisse: ${playerData.savings} €'),
+            Text('Spendenbetrag: $donationAmount €'),
+            const SizedBox(height: 8),
+            const Text(
+              'Hinweis: Der Betrag wird von deinen Ersparnissen abgezogen.',
+              style: TextStyle(color: Colors.blue),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Erstelle eine Kopie der Spielerdaten mit den aktualisierten Werten
+              final updatedPlayerData = playerData.copyWith(
+                savings: playerData.savings - donationAmount,
+              );
+
+              // Aktualisiere die Spielerdaten
+              playerProvider.setPlayerData(updatedPlayerData);
+
+              Navigator.of(context).pop();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Du hast $donationAmount € gespendet!'),
+                  backgroundColor: Colors.blue,
+                ),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.blue),
+            child: const Text('Spenden'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PlayerProvider>(
@@ -898,6 +972,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icon(Icons.work_off, color: Colors.orange),
                         SizedBox(width: 8),
                         Text('Arbeitslos melden'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'donate',
+                    child: Row(
+                      children: [
+                        Icon(Icons.volunteer_activism, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text('Spenden'),
                       ],
                     ),
                   ),
