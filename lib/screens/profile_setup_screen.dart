@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../data/professions.dart';
 import '../models/index.dart';
+import '../models/profession.dart';
 import '../providers/player_provider.dart';
 import '../widgets/theme_toggle_button.dart';
 import 'package:uuid/uuid.dart';
@@ -63,6 +65,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   late List<TextEditingController> _expenseControllers;
   final TextEditingController _totalExpensesController =
       TextEditingController();
+
+  
+
+  String? _selectedProfession;
 
   @override
   void initState() {
@@ -191,6 +197,52 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       passiveIncome += int.parse(_realEstateController.text);
     }
     return passiveIncome;
+  }
+
+  // Function to apply predefined profession data
+  void _applyProfessionData(PredefinedProfession profession) {
+    setState(() {
+      _professionController.text = profession.name;
+      _salaryController.text = profession.salary.toString();
+      _costPerChildController.text = profession.costPerChild.toString();
+      _savingsController.text = profession.savings.toString();
+
+      // Set expenses
+      _expenseControllers[0].text = profession.taxes.toString(); // Steuern
+      _expenseControllers[1].text =
+          profession.homePayment.toString(); // Eigenheim
+      _expenseControllers[2].text = profession.bafogPayment.toString(); // BAföG
+      _expenseControllers[3].text = profession.carPayment.toString(); // Auto
+      _expenseControllers[4].text =
+          profession.creditCardPayment.toString(); // Kreditkarte
+      _expenseControllers[5].text =
+          profession.consumerPayment.toString(); // Verbraucherkredit
+      _expenseControllers[6].text =
+          profession.otherExpenses.toString(); // Sonstige
+      _expenseControllers[7].text =
+          profession.costPerChild.toString(); // Kinder
+
+      // Set liabilities
+      _liabilityAmountControllers[0].text =
+          profession.homeTotal.toString(); // Eigenheim
+      _liabilityPaymentControllers[0].text = profession.homePayment.toString();
+      _liabilityAmountControllers[1].text =
+          profession.bafogTotal.toString(); // BAföG
+      _liabilityPaymentControllers[1].text = profession.bafogPayment.toString();
+      _liabilityAmountControllers[2].text =
+          profession.carTotal.toString(); // Auto
+      _liabilityPaymentControllers[2].text = profession.carPayment.toString();
+      _liabilityAmountControllers[3].text =
+          profession.creditCardTotal.toString(); // Kreditkarte
+      _liabilityPaymentControllers[3].text =
+          profession.creditCardPayment.toString();
+      _liabilityAmountControllers[4].text =
+          profession.consumerTotal.toString(); // Verbraucherkredit
+      _liabilityPaymentControllers[4].text =
+          profession.consumerPayment.toString();
+
+      _calculateTotalExpenses();
+    });
   }
 
   void _submitForm() {
@@ -339,10 +391,35 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 },
               ),
               const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _selectedProfession,
+                decoration: const InputDecoration(
+                  labelText: 'Beruf auswählen',
+                  border: OutlineInputBorder(),
+                ),
+                items: predefinedProfessions.map((profession) {
+                  return DropdownMenuItem(
+                    value: profession.name,
+                    child: Text(profession.name),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedProfession = value;
+                    if (value != null) {
+                      final profession = predefinedProfessions.firstWhere(
+                        (p) => p.name == value,
+                      );
+                      _applyProfessionData(profession);
+                    }
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _professionController,
                 decoration: const InputDecoration(
-                  labelText: 'Beruf',
+                  labelText: 'Beruf (manuell)',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
