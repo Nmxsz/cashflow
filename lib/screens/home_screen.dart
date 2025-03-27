@@ -61,6 +61,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'donate':
         _showDonationDialog(context);
         break;
+      case 'tax_audit':
+        _showTaxAuditDialog(context);
+        break;
     }
   }
 
@@ -717,6 +720,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showTaxAuditDialog(BuildContext context) {
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    final playerData = playerProvider.playerData;
+
+    if (playerData == null) return;
+
+    // Berechne 50% der Ersparnisse
+    final taxAmount = (playerData.savings * 0.5).round();
+
+    // Prüfe, ob genügend Ersparnisse vorhanden sind
+    if (playerData.savings <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Du hast keine Ersparnisse für die Steuerzahlung!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Steuerprüfung'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Die Steuerbehörde hat eine Nachzahlung festgestellt!'),
+            const SizedBox(height: 16),
+            Text('Deine Ersparnisse: ${playerData.savings} €'),
+            Text('Steuernachzahlung: $taxAmount €'),
+            const SizedBox(height: 8),
+            const Text(
+              'Hinweis: Die Hälfte deiner Ersparnisse wird als Steuernachzahlung fällig.',
+              style: TextStyle(color: Colors.red),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Erstelle eine Kopie der Spielerdaten mit den aktualisierten Werten
+              final updatedPlayerData = playerData.copyWith(
+                savings: playerData.savings - taxAmount,
+              );
+
+              // Aktualisiere die Spielerdaten
+              playerProvider.setPlayerData(updatedPlayerData);
+
+              Navigator.of(context).pop();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Du hast $taxAmount € Steuern nachgezahlt!'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Steuern zahlen'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PlayerProvider>(
@@ -982,6 +1056,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icon(Icons.volunteer_activism, color: Colors.blue),
                         SizedBox(width: 8),
                         Text('Spenden'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'tax_audit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.account_balance, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Steuerprüfung'),
                       ],
                     ),
                   ),
