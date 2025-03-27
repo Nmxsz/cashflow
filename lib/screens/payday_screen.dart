@@ -138,16 +138,40 @@ class PaydayScreen extends StatelessWidget {
             if (playerData.cashflow >= 0)
               ElevatedButton(
                 onPressed: () async {
+                  // Zahltag durchführen
                   await playerProvider.processPayday();
-                  if (context.mounted) {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => const HomeScreen(),
-                      ),
-                    );
-                  }
+
+                  if (!context.mounted) return;
+
+                  // Erfolgsmeldung anzeigen
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Zahltag erfolgreich durchgeführt!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+
+                  // Zurück zum HomeScreen navigieren
+                  Navigator.pop(context);
+
+                  // Verzögerung, um sicherzustellen, dass die Navigation abgeschlossen ist
+                  await Future.delayed(const Duration(milliseconds: 100));
+
+                  // Scrolle den HomeScreen nach oben
+                  homeScreenKey.currentState?.scrollController.animateTo(
+                    0,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
                 },
-                child: const Text('Zahltag verarbeiten'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                ),
+                child: const Text(
+                  'Zahltag durchführen',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
               ),
           ],
         ),
