@@ -85,6 +85,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
         _costPerShareController.clear();
       }
     });
+    _showAssetForm(context);
   }
 
   // Berechnet die Kosten basierend auf der Kategorie und den Eingaben
@@ -656,210 +657,217 @@ class _AssetsScreenState extends State<AssetsScreen> {
 
           return Column(
             children: [
-              // Liste der vorhandenen Vermögenswerte
+              // Übersicht-Karte für den Gesamtwert
+              Card(
+                margin: const EdgeInsets.all(16),
+                color: Colors.green.shade800,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Gesamt-Vermögenswert:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '$totalAssetsValue €',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Liste der Vermögenswerte
               Expanded(
                 child: playerData.assets.isEmpty
                     ? const Center(
                         child: Text('Keine Vermögenswerte vorhanden'),
                       )
-                    : Column(
-                        children: [
-                          // Übersicht-Karte für den Gesamtwert
-                          Card(
-                            margin: const EdgeInsets.all(16),
-                            color: Colors.green.shade800,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                    : ListView.builder(
+                        itemCount: playerData.assets.length,
+                        itemBuilder: (context, index) {
+                          final asset = playerData.assets[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            child: ListTile(
+                              title: Text(asset.name),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Gesamt-Vermögenswert:',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
+                                  Text('Kategorie: ${asset.category}'),
+                                  if (asset.category == AssetCategory.stocks &&
+                                      asset.shares != null &&
+                                      asset.costPerShare != null)
+                                    Text(
+                                        '${asset.shares} Anteile zu je ${asset.costPerShare} € (Gesamt: ${asset.cost} €)'),
+                                  if (asset.category == AssetCategory.stocks &&
+                                      (asset.shares == null ||
+                                          asset.costPerShare == null))
+                                    Text('Gesamtwert: ${asset.cost} €'),
+                                  if (asset.category != AssetCategory.stocks)
+                                    Text(
+                                        'Kosten: ${asset.cost} € | Einkommen: ${asset.monthlyIncome} €'),
+                                  if (asset.category != AssetCategory.stocks &&
+                                      asset.downPayment > 0)
+                                    Text('Anzahlung: ${asset.downPayment} €'),
+                                ],
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit,
+                                        color: Colors.blue),
+                                    onPressed: () =>
+                                        _prepareForEditing(asset, index),
+                                    tooltip: 'Bearbeiten',
                                   ),
-                                  Text(
-                                    '$totalAssetsValue €',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
+                                  IconButton(
+                                    icon: const Icon(Icons.sell,
+                                        color: Colors.green),
+                                    onPressed: () => _sellAsset(index, asset),
+                                    tooltip: 'Verkaufen',
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
+                                    onPressed: () => _deleteAsset(index),
+                                    tooltip: 'Löschen',
                                   ),
                                 ],
                               ),
+                              isThreeLine: true,
                             ),
-                          ),
-
-                          // Liste der Vermögenswerte
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: playerData.assets.length,
-                              itemBuilder: (context, index) {
-                                final asset = playerData.assets[index];
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 8),
-                                  child: ListTile(
-                                    title: Text(asset.name),
-                                    subtitle: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text('Kategorie: ${asset.category}'),
-                                        if (asset.category ==
-                                                AssetCategory.stocks &&
-                                            asset.shares != null &&
-                                            asset.costPerShare != null)
-                                          Text(
-                                              '${asset.shares} Anteile zu je ${asset.costPerShare} € (Gesamt: ${asset.cost} €)'),
-                                        if (asset.category ==
-                                                AssetCategory.stocks &&
-                                            (asset.shares == null ||
-                                                asset.costPerShare == null))
-                                          Text('Gesamtwert: ${asset.cost} €'),
-                                        if (asset.category !=
-                                            AssetCategory.stocks)
-                                          Text(
-                                              'Kosten: ${asset.cost} € | Einkommen: ${asset.monthlyIncome} €'),
-                                        // Weitere kategoriespezifische Informationen
-                                        if (asset.category !=
-                                                AssetCategory.stocks &&
-                                            asset.downPayment > 0)
-                                          Text(
-                                              'Anzahlung: ${asset.downPayment} €'),
-                                      ],
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.edit,
-                                              color: Colors.blue),
-                                          onPressed: () =>
-                                              _prepareForEditing(asset, index),
-                                          tooltip: 'Bearbeiten',
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.sell,
-                                              color: Colors.green),
-                                          onPressed: () =>
-                                              _sellAsset(index, asset),
-                                          tooltip: 'Verkaufen',
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete,
-                                              color: Colors.red),
-                                          onPressed: () => _deleteAsset(index),
-                                          tooltip: 'Löschen',
-                                        ),
-                                      ],
-                                    ),
-                                    isThreeLine: true,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
-              ),
-
-              // Formular zum Hinzufügen/Bearbeiten von Vermögenswerten
-              Card(
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          _editMode
-                              ? 'Vermögenswert bearbeiten'
-                              : 'Neuen Vermögenswert hinzufügen',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Name',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Bitte gib einen Namen ein';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        // Kategorieauswahl
-                        DropdownButtonFormField<AssetCategory>(
-                          decoration: const InputDecoration(
-                            labelText: 'Kategorie',
-                            border: OutlineInputBorder(),
-                          ),
-                          value: _selectedCategory,
-                          items: _categories
-                              .map((category) => DropdownMenuItem(
-                                    value: category,
-                                    child: Text(category.toString()),
-                                  ))
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedCategory = value;
-                                // Zurücksetzen der spezifischen Felder
-                                if (_selectedCategory == AssetCategory.stocks) {
-                                  _downPaymentController.text = '0';
-                                  _monthlyIncomeController.text = '0';
-                                } else {
-                                  _sharesController.clear();
-                                  _costPerShareController.clear();
-                                }
-                              });
-                            }
-                          },
-                        ),
-
-                        // Kategorieabhängige Felder
-                        _buildCategorySpecificFields(),
-
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _saveAsset,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                _editMode ? Colors.blue : Colors.green,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: Text(
-                            _editMode
-                                ? 'Vermögenswert aktualisieren'
-                                : 'Vermögenswert hinzufügen',
-                            style: const TextStyle(
-                                fontSize: 16, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ),
             ],
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _resetForm();
+          _showAssetForm(context);
+        },
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  // Zeigt das Formular in einem Bottom Sheet an
+  void _showAssetForm(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _editMode
+                          ? 'Vermögenswert bearbeiten'
+                          : 'Neuen Vermögenswert hinzufügen',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Bitte gib einen Namen ein';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<AssetCategory>(
+                      decoration: const InputDecoration(
+                        labelText: 'Kategorie',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: _selectedCategory,
+                      items: _categories
+                          .map((category) => DropdownMenuItem(
+                                value: category,
+                                child: Text(category.toString()),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedCategory = value;
+                            // Zurücksetzen der spezifischen Felder
+                            if (_selectedCategory == AssetCategory.stocks) {
+                              _downPaymentController.text = '0';
+                              _monthlyIncomeController.text = '0';
+                            } else {
+                              _sharesController.clear();
+                              _costPerShareController.clear();
+                            }
+                          });
+                        }
+                      },
+                    ),
+                    _buildCategorySpecificFields(),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        _saveAsset();
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _editMode ? Colors.blue : Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text(
+                        _editMode
+                            ? 'Vermögenswert aktualisieren'
+                            : 'Vermögenswert hinzufügen',
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

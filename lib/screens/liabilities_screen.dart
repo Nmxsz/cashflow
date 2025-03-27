@@ -57,6 +57,7 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
       _totalDebtController.text = liability.totalDebt.toString();
       _monthlyPaymentController.text = liability.monthlyPayment.toString();
     });
+    _showLiabilityForm(context);
   }
 
   // Speichert die Verbindlichkeit (neu oder bearbeitet)
@@ -517,235 +518,244 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
 
           return Column(
             children: [
-              // Liste der vorhandenen Verbindlichkeiten
+              // Übersicht-Karte für die Gesamtschulden
+              Card(
+                margin: const EdgeInsets.all(16),
+                color: Colors.red.shade800,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Gesamtschulden:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '$totalDebt €',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Liste der Verbindlichkeiten
               Expanded(
                 child: playerData.liabilities.isEmpty
                     ? const Center(
                         child: Text('Keine Verbindlichkeiten vorhanden'),
                       )
-                    : Column(
-                        children: [
-                          // Übersicht-Karte für die Gesamtschulden
-                          Card(
-                            margin: const EdgeInsets.all(16),
-                            color: Colors.red.shade800,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                    : ListView.builder(
+                        itemCount: playerData.liabilities.length,
+                        itemBuilder: (context, index) {
+                          final liability = playerData.liabilities[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            child: ListTile(
+                              title: Text(liability.name),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Gesamtschulden:',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                                  Text('Kategorie: ${liability.category}'),
                                   Text(
-                                    '$totalDebt €',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
+                                      'Schulden: ${liability.totalDebt} € | Monatliche Rate: ${liability.monthlyPayment} €'),
+                                ],
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.payment,
+                                        color: Colors.green),
+                                    onPressed: () =>
+                                        _payOffLiability(liability, index),
+                                    tooltip: 'Abzahlen',
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit,
+                                        color: Colors.blue),
+                                    onPressed: () =>
+                                        _prepareForEditing(liability, index),
+                                    tooltip: 'Bearbeiten',
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
+                                    onPressed: () => _deleteLiability(index),
+                                    tooltip: 'Löschen',
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-
-                          // Liste der Verbindlichkeiten
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: playerData.liabilities.length,
-                              itemBuilder: (context, index) {
-                                final liability = playerData.liabilities[index];
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 8),
-                                  child: ListTile(
-                                    title: Text(liability.name),
-                                    subtitle: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                            'Kategorie: ${liability.category}'),
-                                        Text(
-                                            'Schulden: ${liability.totalDebt} € | Monatliche Rate: ${liability.monthlyPayment} €'),
-                                      ],
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        // Abzahlen-Button
-                                        IconButton(
-                                          icon: const Icon(Icons.payment,
-                                              color: Colors.green),
-                                          onPressed: () => _payOffLiability(
-                                              liability, index),
-                                          tooltip: 'Abzahlen',
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.edit,
-                                              color: Colors.blue),
-                                          onPressed: () => _prepareForEditing(
-                                              liability, index),
-                                          tooltip: 'Bearbeiten',
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete,
-                                              color: Colors.red),
-                                          onPressed: () =>
-                                              _deleteLiability(index),
-                                          tooltip: 'Löschen',
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
-              ),
-
-              // Formular zum Hinzufügen/Bearbeiten von Verbindlichkeiten
-              Card(
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          _editMode
-                              ? 'Verbindlichkeit bearbeiten'
-                              : 'Neue Verbindlichkeit hinzufügen',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Name',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Bitte gib einen Namen ein';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        // Kategorieauswahl
-                        DropdownButtonFormField<LiabilityCategory>(
-                          decoration: const InputDecoration(
-                            labelText: 'Kategorie',
-                            border: OutlineInputBorder(),
-                          ),
-                          value: _selectedCategory,
-                          items: _categories
-                              .map((category) => DropdownMenuItem(
-                                    value: category,
-                                    child: Text(category.toString()),
-                                  ))
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedCategory = value;
-                              });
-                            }
-                          },
-                          validator: (value) {
-                            if (value == null) {
-                              return 'Bitte wähle eine Kategorie aus';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _totalDebtController,
-                          decoration: const InputDecoration(
-                            labelText: 'Gesamtschuld (€)',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
-                          ],
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Bitte gib die Gesamtschuld ein';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        if (_selectedCategory !=
-                            LiabilityCategory.propertyMortgage)
-                          TextFormField(
-                            controller: _monthlyPaymentController,
-                            decoration: const InputDecoration(
-                              labelText: 'Monatliche Rate (€)',
-                              border: OutlineInputBorder(),
-                            ),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly
-                            ],
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Bitte gib die monatliche Rate ein';
-                              }
-                              return null;
-                            },
-                          ),
-                        if (_selectedCategory ==
-                            LiabilityCategory.propertyMortgage)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8.0),
-                            child: Text(
-                              'Monatliche Rate: 0 € (Rate ist bereits im Cashflow der Immobilie berücksichtigt)',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ),
-
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _saveLiability,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                _editMode ? Colors.blue : Colors.red,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: Text(
-                            _editMode
-                                ? 'Verbindlichkeit aktualisieren'
-                                : 'Verbindlichkeit hinzufügen',
-                            style: const TextStyle(
-                                fontSize: 16, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ),
             ],
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _resetForm();
+          _showLiabilityForm(context);
+        },
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  // Zeigt das Formular in einem Bottom Sheet an
+  void _showLiabilityForm(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _editMode
+                          ? 'Verbindlichkeit bearbeiten'
+                          : 'Neue Verbindlichkeit hinzufügen',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Bitte gib einen Namen ein';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<LiabilityCategory>(
+                      decoration: const InputDecoration(
+                        labelText: 'Kategorie',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: _selectedCategory,
+                      items: _categories
+                          .map((category) => DropdownMenuItem(
+                                value: category,
+                                child: Text(category.toString()),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedCategory = value;
+                          });
+                        }
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Bitte wähle eine Kategorie aus';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _totalDebtController,
+                      decoration: const InputDecoration(
+                        labelText: 'Gesamtschuld (€)',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Bitte gib die Gesamtschuld ein';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    if (_selectedCategory != LiabilityCategory.propertyMortgage)
+                      TextFormField(
+                        controller: _monthlyPaymentController,
+                        decoration: const InputDecoration(
+                          labelText: 'Monatliche Rate (€)',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Bitte gib die monatliche Rate ein';
+                          }
+                          return null;
+                        },
+                      ),
+                    if (_selectedCategory == LiabilityCategory.propertyMortgage)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        child: Text(
+                          'Monatliche Rate: 0 € (Rate ist bereits im Cashflow der Immobilie berücksichtigt)',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        _saveLiability();
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _editMode ? Colors.blue : Colors.red,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text(
+                        _editMode
+                            ? 'Verbindlichkeit aktualisieren'
+                            : 'Verbindlichkeit hinzufügen',
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
