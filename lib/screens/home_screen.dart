@@ -55,6 +55,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'babyparty':
         _showBabypartyDialog(context);
         break;
+      case 'arbeitslos':
+        _showArbeitslosDialog(context);
+        break;
     }
   }
 
@@ -566,6 +569,80 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showArbeitslosDialog(BuildContext context) {
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    final playerData = playerProvider.playerData;
+
+    if (playerData == null) return;
+
+    // Berechne die Gesamtausgaben
+    final totalExpenses = playerData.totalExpenses;
+
+    // Prüfe, ob genügend Ersparnisse vorhanden sind
+    if (playerData.savings < totalExpenses) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nicht genügend Ersparnisse für die Arbeitslosigkeit!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Arbeitslos melden'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Möchtest du dich wirklich arbeitslos melden?'),
+            const SizedBox(height: 16),
+            Text('Gesamtausgaben: $totalExpenses €'),
+            Text('Aktuelle Ersparnisse: ${playerData.savings} €'),
+            const SizedBox(height: 8),
+            const Text(
+              'Hinweis: Die Gesamtausgaben werden von deinen Ersparnissen abgezogen.',
+              style: TextStyle(color: Colors.orange),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Erstelle eine Kopie der Spielerdaten mit den aktualisierten Werten
+              final updatedPlayerData = playerData.copyWith(
+                savings: playerData.savings - totalExpenses,
+                salary: 0, // Setze das Gehalt auf 0
+                cashflow: playerData.passiveIncome -
+                    totalExpenses, // Aktualisiere den Cashflow
+              );
+
+              // Aktualisiere die Spielerdaten
+              playerProvider.setPlayerData(updatedPlayerData);
+
+              Navigator.of(context).pop();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Du bist jetzt arbeitslos!'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Arbeitslos melden'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PlayerProvider>(
@@ -582,25 +659,25 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Scaffold(
               backgroundColor: Colors.transparent,
               appBar: AppBar(
-                  backgroundColor: Theme.of(context).cardColor.withOpacity(0.9),
-                  title: Row(
-                    children: [
-                      Container(
-                        width: 150,
-                        height: 150,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.asset(
-                            'assets/images/Logo.png',
-                            height: 150,
-                            width: 150,
-                          ),
+                backgroundColor: Theme.of(context).cardColor.withOpacity(0.9),
+                title: Row(
+                  children: [
+                    Container(
+                      width: 150,
+                      height: 150,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/images/Logo.png',
+                          height: 150,
+                          width: 150,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      const Text('Cashflow'),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text('Cashflow'),
+                  ],
+                ),
                 actions: const [
                   ThemeToggleButton(),
                 ],
@@ -684,7 +761,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
-                    if (playerProvider.playerData == null) const FeatureFooter(),
+                    if (playerProvider.playerData == null)
+                      const FeatureFooter(),
                   ],
                 ),
               ),
@@ -810,6 +888,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icon(Icons.child_care),
                         SizedBox(width: 8),
                         Text('Babyparty!'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'arbeitslos',
+                    child: Row(
+                      children: [
+                        Icon(Icons.work_off, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text('Arbeitslos melden'),
                       ],
                     ),
                   ),
