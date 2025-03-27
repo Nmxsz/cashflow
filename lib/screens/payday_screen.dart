@@ -63,6 +63,41 @@ class PaydayScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (playerData.cashflow < 0)
+              Card(
+                color: Colors.red.shade100,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.red,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Bankrott!',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Dein Cashflow ist negativ. Du kannst nicht mehr weiter spielen.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
             Card(
               elevation: 4,
               child: Padding(
@@ -94,88 +129,26 @@ class PaydayScreen extends StatelessWidget {
                           playerData.cashflow >= 0 ? Colors.green : Colors.red,
                     ),
                     const Divider(),
-                    _buildInfoRow(
-                      'Gesamtvermögen',
-                      '${playerData.netWorth} €',
-                      valueColor:
-                          playerData.netWorth >= 0 ? Colors.green : Colors.red,
-                    ),
+                    _buildInfoRow('Nettovermögen', '$newNetWorth €'),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              'Nach dem Zahltag werden folgende Änderungen vorgenommen:',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInfoRow(
-                      'Neuer Kontostand',
-                      '$newSavings €',
-                      valueColor: Colors.blue,
-                    ),
-                    _buildInfoRow(
-                      'Reduzierte Schulden',
-                      '$reducedDebtAmount €',
-                      valueColor: Colors.green,
-                    ),
-                    _buildInfoRow(
-                      'Neues Gesamtvermögen',
-                      '$newNetWorth €',
-                      valueColor: newNetWorth >= 0 ? Colors.green : Colors.red,
-                      valueFontSize: 18.0,
-                      labelFontWeight: FontWeight.bold,
-                    ),
-                  ],
-                ),
+            const SizedBox(height: 16),
+            if (playerData.cashflow >= 0)
+              ElevatedButton(
+                onPressed: () async {
+                  await playerProvider.processPayday();
+                  if (context.mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => const HomeScreen(),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Zahltag verarbeiten'),
               ),
-            ),
-            const Spacer(),
-            ElevatedButton(
-              onPressed: () async {
-                // Zahltag durchführen
-                await playerProvider.processPayday();
-
-                if (!context.mounted) return;
-
-                // Erfolgsmeldung anzeigen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Zahltag erfolgreich durchgeführt!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-
-                // Zurück zum HomeScreen navigieren
-                Navigator.pop(context);
-
-                // Verzögerung, um sicherzustellen, dass die Navigation abgeschlossen ist
-                await Future.delayed(const Duration(milliseconds: 100));
-
-                // Scrolle den HomeScreen nach oben
-                homeScreenKey.currentState?.scrollController.animateTo(
-                  0,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-              ),
-              child: const Text(
-                'Zahltag durchführen',
-                style: TextStyle(fontSize: 16, color: Colors.white),
-              ),
-            ),
           ],
         ),
       ),

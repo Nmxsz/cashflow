@@ -14,6 +14,7 @@ import 'payday_screen.dart';
 import 'multiplayer_room_screen.dart';
 import 'schnickschnack_screen.dart';
 import 'package:uuid/uuid.dart';
+import '../widgets/bankruptcy_dialog.dart';
 
 // Global key für den Zugriff auf den HomeScreen-State
 final GlobalKey<_HomeScreenState> homeScreenKey = GlobalKey<_HomeScreenState>();
@@ -345,32 +346,20 @@ class _HomeScreenState extends State<HomeScreen> {
               TextFormField(
                 controller: _amountController,
                 decoration: const InputDecoration(
-                  labelText: 'Darlehensbetrag (€)',
-                  border: OutlineInputBorder(),
-                  helperText: 'Nur in 1.000€ Schritten möglich',
+                  labelText: 'Darlehensbetrag',
+                  suffixText: '€',
                 ),
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Bitte geben Sie einen Betrag ein';
+                    return 'Bitte gib einen Betrag ein';
                   }
-                  final amount = int.parse(value);
-                  if (amount <= 0) {
-                    return 'Der Betrag muss größer als 0 sein';
-                  }
-                  if (amount % 1000 != 0) {
-                    return 'Der Betrag muss in 1.000€ Schritten sein';
+                  final amount = int.tryParse(value);
+                  if (amount == null || amount <= 0) {
+                    return 'Bitte gib einen gültigen Betrag ein';
                   }
                   return null;
                 },
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Konditionen:\n'
-                '• 10% Zinsen pro Monat\n'
-                '• €100 monatliche Rate pro geliehene €1.000',
-                style: TextStyle(fontSize: 14),
               ),
             ],
           ),
@@ -384,41 +373,46 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               if (_formKey.currentState?.validate() ?? false) {
                 final amount = int.parse(_amountController.text);
-                final monthlyPayment = (amount ~/ 1000) * 100;
-                final monthlyInterest = (amount * 0.10).round(); // 10% Zinsen
+                final monthlyPayment =
+                    (amount * 0.1).round(); // 10% monatliche Rate
 
-                // Füge Darlehen hinzu
-                playerProvider.addLiability(Liability(
-                  name: 'Bankdarlehen: €$amount',
-                  category: LiabilityCategory.bankLoan,
-                  totalDebt: amount,
-                  monthlyPayment: monthlyPayment,
-                ));
+                // Berechne den neuen Cashflow
+                final newCashflow = playerProvider.playerData!.salary +
+                    playerProvider.playerData!.passiveIncome -
+                    (playerProvider.playerData!.totalExpenses + monthlyPayment);
 
-                // Füge Zinskosten als Ausgabe hinzu
-                playerProvider.addExpense(Expense(
-                  name: 'Zinsen für Bankdarlehen: €$amount',
-                  amount: monthlyInterest,
-                  type: ExpenseType.other,
-                ));
-
-                // Aktualisiere Ersparnisse
-                final currentSavings = playerProvider.playerData!.savings;
-                playerProvider.updatePlayerStats(
-                  savings: currentSavings + amount,
-                );
-
-                Navigator.of(context).pop();
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Bankdarlehen über €$amount aufgenommen'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                // Prüfe auf Bankrott
+                if (playerProvider.wouldCauseBankruptcy(newCashflow)) {
+                  Navigator.of(context).pop(); // Schließe den aktuellen Dialog
+                  showDialog(
+                    context: context,
+                    builder: (context) => BankruptcyDialog(
+                      onConfirm: () {
+                        // Füge das Darlehen hinzu
+                        playerProvider.addLiability(Liability(
+                          name: 'Bankdarlehen',
+                          category: LiabilityCategory.bankLoan,
+                          totalDebt: amount,
+                          monthlyPayment: monthlyPayment,
+                        ));
+                        Navigator.of(context).pop();
+                      },
+                      onCancel: () => Navigator.of(context).pop(),
+                    ),
+                  );
+                } else {
+                  // Füge das Darlehen direkt hinzu
+                  playerProvider.addLiability(Liability(
+                    name: 'Bankdarlehen',
+                    category: LiabilityCategory.bankLoan,
+                    totalDebt: amount,
+                    monthlyPayment: monthlyPayment,
+                  ));
+                  Navigator.of(context).pop();
+                }
               }
             },
-            child: const Text('Aufnehmen'),
+            child: const Text('Darlehen aufnehmen'),
           ),
         ],
       ),

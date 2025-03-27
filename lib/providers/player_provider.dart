@@ -5,19 +5,36 @@ import '../services/player_service.dart';
 class PlayerProvider extends ChangeNotifier {
   PlayerData? _playerData;
   final PlayerService _playerService = PlayerService();
+  bool _isBankrupt = false;
 
   PlayerData? get playerData => _playerData;
+  bool get isBankrupt => _isBankrupt;
 
   // Lädt die Spielerdaten beim Start der App
   Future<void> loadPlayerData() async {
     _playerData = await _playerService.loadPlayerData();
+    if (_playerData != null) {
+      _isBankrupt = _playerData!.cashflow < 0;
+    }
     notifyListeners();
   }
 
   // Speichert neue Spielerdaten
   Future<void> setPlayerData(PlayerData playerData) async {
     _playerData = playerData;
+    _isBankrupt = playerData.cashflow < 0;
     await _playerService.savePlayerData(playerData);
+    notifyListeners();
+  }
+
+  // Prüft, ob eine Aktion zu Bankrott führen würde
+  bool wouldCauseBankruptcy(int newCashflow) {
+    return newCashflow < 0;
+  }
+
+  // Setzt den Bankrott-Status
+  void setBankruptcy(bool isBankrupt) {
+    _isBankrupt = isBankrupt;
     notifyListeners();
   }
 
@@ -41,6 +58,16 @@ class PlayerProvider extends ChangeNotifier {
   Future<void> addLiability(Liability liability) async {
     if (playerData == null) return;
 
+    // Berechne den neuen Cashflow
+    final newCashflow = playerData!.salary +
+        playerData!.passiveIncome -
+        (playerData!.totalExpenses + liability.monthlyPayment);
+
+    // Prüfe auf Bankrott
+    if (wouldCauseBankruptcy(newCashflow)) {
+      setBankruptcy(true);
+    }
+
     playerData!.liabilities.add(liability);
     await _playerService.savePlayerData(playerData!);
     notifyListeners();
@@ -50,11 +77,19 @@ class PlayerProvider extends ChangeNotifier {
   Future<void> addExpense(Expense expense) async {
     if (playerData == null) return;
 
+    // Berechne den neuen Cashflow
+    final newCashflow = playerData!.salary +
+        playerData!.passiveIncome -
+        (playerData!.totalExpenses + expense.amount);
+
+    // Prüfe auf Bankrott
+    if (wouldCauseBankruptcy(newCashflow)) {
+      setBankruptcy(true);
+    }
+
     playerData!.expenses.add(expense);
     playerData!.totalExpenses += expense.amount;
-    playerData!.cashflow = playerData!.salary +
-        playerData!.passiveIncome -
-        playerData!.totalExpenses;
+    playerData!.cashflow = newCashflow;
 
     await _playerService.savePlayerData(playerData!);
     notifyListeners();
