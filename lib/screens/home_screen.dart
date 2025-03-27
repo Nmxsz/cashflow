@@ -483,28 +483,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 final name = _nameController.text;
                 final cost = int.parse(_costController.text);
 
-                // Prüfe, ob genügend Ersparnisse vorhanden sind
-                if (playerProvider.playerData!.savings < cost) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Nicht genügend Ersparnisse!'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-
                 try {
-                  // Füge Schnickschnack hinzu
-                  await playerProvider.addSchnickschnack(Schnickschnack(
+                  // Erstelle den neuen Schnickschnack
+                  final newItem = Schnickschnack(
                     id: const Uuid().v4(),
                     name: name,
                     cost: cost,
                     purchaseDate: DateTime.now(),
-                  ));
+                  );
 
+                  // Füge den Schnickschnack hinzu
+                  await playerProvider.addSchnickschnack(newItem);
+
+                  // Schließe den Dialog
                   Navigator.of(context).pop();
 
+                  // Zeige Erfolgsmeldung
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('$name für $cost € gekauft'),
@@ -512,6 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 } catch (e) {
+                  // Zeige Fehlermeldung
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Fehler beim Kauf: $e'),

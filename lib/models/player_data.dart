@@ -125,9 +125,19 @@ class PlayerData {
 
   // Fügt einen Schnickschnack hinzu
   void addSchnickschnack(Schnickschnack item) {
+    // Prüfe, ob genügend Ersparnisse vorhanden sind
+    if (savings < item.cost) {
+      throw Exception('Nicht genügend Ersparnisse für den Kauf');
+    }
+
+    // Füge das Item zur Liste hinzu
     schnickschnackItems.add(item);
-    // Reduziere die Ersparnisse um die Kosten des Schnickschnacks
+
+    // Reduziere die Ersparnisse
     savings -= item.cost;
+
+    // Aktualisiere den Cashflow
+    updateCashflow();
   }
 
   // Entfernt einen Schnickschnack
@@ -135,6 +145,7 @@ class PlayerData {
     schnickschnackItems.remove(item);
     // Optional: Wenn man möchte, dass beim Entfernen der Betrag zurückgegeben wird
     // savings += item.cost;
+    updateCashflow();
   }
 
   PlayerData copyWith({

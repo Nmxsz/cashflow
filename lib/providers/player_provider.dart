@@ -155,12 +155,17 @@ class PlayerProvider extends ChangeNotifier {
   Future<void> addSchnickschnack(Schnickschnack item) async {
     if (_playerData != null) {
       try {
-        _playerData =
-            await _playerService.addSchnickschnack(_playerData!, item);
+        // Füge den Schnickschnack hinzu und aktualisiere die Ersparnisse
+        _playerData!.addSchnickschnack(item);
+
+        // Speichere die aktualisierten Daten
+        await _playerService.savePlayerData(_playerData!);
+
+        // Benachrichtige die Listener
         notifyListeners();
       } catch (e) {
         print('Fehler beim Hinzufügen von Schnickschnack: $e');
-        // Hier könnte man einen Error-Callback implementieren
+        rethrow; // Werfe den Fehler weiter, damit er im UI behandelt werden kann
       }
     }
   }
@@ -168,9 +173,19 @@ class PlayerProvider extends ChangeNotifier {
   // Entfernt einen Schnickschnack
   Future<void> removeSchnickschnack(Schnickschnack item) async {
     if (_playerData != null) {
-      _playerData =
-          await _playerService.removeSchnickschnack(_playerData!, item);
-      notifyListeners();
+      try {
+        // Entferne den Schnickschnack
+        _playerData!.removeSchnickschnack(item);
+
+        // Speichere die aktualisierten Daten
+        await _playerService.savePlayerData(_playerData!);
+
+        // Benachrichtige die Listener
+        notifyListeners();
+      } catch (e) {
+        print('Fehler beim Entfernen von Schnickschnack: $e');
+        rethrow; // Werfe den Fehler weiter, damit er im UI behandelt werden kann
+      }
     }
   }
 }
