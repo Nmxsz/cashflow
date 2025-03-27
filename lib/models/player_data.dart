@@ -165,6 +165,14 @@ class PlayerData {
   // Fügt ein Kind hinzu
   void addChild() {
     numberOfChildren++;
+
+    // Füge eine neue Ausgabe für das Kind hinzu
+    expenses.add(Expense(
+      name: 'Kinder Ausgaben',
+      amount: costPerChild,
+      type: ExpenseType.perChild,
+    ));
+
     updateCashflow();
   }
 
@@ -172,6 +180,10 @@ class PlayerData {
   void removeChild() {
     if (numberOfChildren > 0) {
       numberOfChildren--;
+
+      // Entferne die Kinderausgabe
+      expenses.removeWhere((expense) => expense.type == ExpenseType.perChild);
+
       updateCashflow();
     }
   }
