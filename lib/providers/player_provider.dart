@@ -68,7 +68,32 @@ class PlayerProvider extends ChangeNotifier {
       setBankruptcy(true);
     }
 
-    playerData!.liabilities.add(liability);
+    // Wenn es sich um ein Bankdarlehen handelt, suche nach einem existierenden Bankdarlehen
+    if (liability.category == LiabilityCategory.bankLoan) {
+      final existingBankLoanIndex = playerData!.liabilities.indexWhere(
+        (l) => l.category == LiabilityCategory.bankLoan,
+      );
+
+      if (existingBankLoanIndex != -1) {
+        // Aktualisiere das existierende Bankdarlehen
+        final existingLoan = playerData!.liabilities[existingBankLoanIndex];
+        final updatedLoan = Liability(
+          name: 'Bankdarlehen',
+          category: LiabilityCategory.bankLoan,
+          totalDebt: existingLoan.totalDebt + liability.totalDebt,
+          monthlyPayment:
+              existingLoan.monthlyPayment + liability.monthlyPayment,
+        );
+        playerData!.liabilities[existingBankLoanIndex] = updatedLoan;
+      } else {
+        // Füge ein neues Bankdarlehen hinzu
+        playerData!.liabilities.add(liability);
+      }
+    } else {
+      // Für alle anderen Verbindlichkeiten: normaler Prozess
+      playerData!.liabilities.add(liability);
+    }
+
     await _playerService.savePlayerData(playerData!);
     notifyListeners();
   }

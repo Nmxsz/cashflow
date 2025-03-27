@@ -37,5 +37,6 @@ class Expense {
   bool get isRetail => type == ExpenseType.retail;
   bool get isOtherExpenses => type == ExpenseType.otherExpenses;
   bool get isPerChild => type == ExpenseType.perChild;
+  bool get isBankLoan => type == ExpenseType.bankLoan;
   bool get isOther => type == ExpenseType.other;
 }

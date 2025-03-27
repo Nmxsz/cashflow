@@ -373,6 +373,8 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
           return expense.type == ExpenseType.creditCard;
         } else if (liability.category == LiabilityCategory.consumerDebt) {
           return expense.type == ExpenseType.retail;
+        } else if (liability.category == LiabilityCategory.bankLoan) {
+          return expense.type == ExpenseType.bankLoan;
         }
         return false;
       });

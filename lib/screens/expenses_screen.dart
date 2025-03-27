@@ -318,4 +318,32 @@ class ExpensesScreen extends StatelessWidget {
       ),
     );
   }
+
+  // Gruppiert Bankdarlehen zu einem Eintrag
+  List<Liability> _groupBankLoans(List<Liability> liabilities) {
+    final bankLoans = liabilities
+        .where((l) => l.category == LiabilityCategory.bankLoan)
+        .toList();
+    if (bankLoans.isEmpty) return liabilities;
+
+    // Berechne die Gesamtsumme der Bankdarlehen
+    final totalDebt =
+        bankLoans.fold<int>(0, (sum, loan) => sum + loan.totalDebt);
+    final totalPayment =
+        bankLoans.fold<int>(0, (sum, loan) => sum + loan.monthlyPayment);
+
+    // Erstelle einen zusammengefassten Eintrag für Bankdarlehen
+    final groupedBankLoan = Liability(
+      name: 'Bankdarlehen',
+      category: LiabilityCategory.bankLoan,
+      totalDebt: totalDebt,
+      monthlyPayment: totalPayment,
+    );
+
+    // Füge den zusammengefassten Eintrag hinzu und entferne die einzelnen Bankdarlehen
+    return liabilities
+        .where((l) => l.category != LiabilityCategory.bankLoan)
+        .toList()
+      ..add(groupedBankLoan);
+  }
 }

@@ -119,6 +119,9 @@ class PlayerService {
         case 'Verbraucherkreditschulden':
           expenseType = ExpenseType.retail;
           break;
+        case 'Bankdarlehen':
+          expenseType = ExpenseType.bankLoan;
+          break;
         default:
           expenseType = ExpenseType.other;
       }

@@ -51,6 +51,7 @@ enum ExpenseType {
   retail('Einzelhandel'),
   otherExpenses('Sonstige Ausgaben'),
   perChild('Pro Kind'),
+  bankLoan('Bankdarlehen'),
   other('Sonstiges');
 
   final String displayName;

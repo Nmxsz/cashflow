@@ -60,6 +60,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     'Verbraucherkredit Zahlung',
     'Sonstige Ausgaben',
     'Kinder Ausgaben',
+    'Bankdarlehen Zahlung',
   ];
 
   late List<TextEditingController> _expenseControllers;
@@ -130,6 +131,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       4: _liabilityTypes[3].$1, // Kreditkarten Zahlung -> Kreditkarten
       5: _liabilityTypes[4]
           .$1, // Verbraucherkredit Zahlung -> Verbraucherkreditschulden
+      8: _liabilityTypes[7].$1, // Bankdarlehen Zahlung -> Bankdarlehen
     };
 
     // Füge Listener für die relevanten Ausgaben-Controller hinzu
@@ -277,6 +279,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 break;
               case 6:
                 type = ExpenseType.perChild;
+                break;
+              case 7:
+                type = ExpenseType.bankLoan;
                 break;
               default:
                 type = ExpenseType.other;

@@ -413,6 +413,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           totalDebt: amount,
                           monthlyPayment: monthlyPayment,
                         ));
+                        // Füge den Kreditbetrag zu den Ersparnissen hinzu
+                        playerProvider.updatePlayerStats(
+                          savings: playerProvider.playerData!.savings + amount,
+                        );
+                        // Füge die monatliche Rate als Ausgabe hinzu
+                        playerProvider.addExpense(Expense(
+                          name: 'Bankdarlehen Zahlung',
+                          amount: monthlyPayment,
+                          type: ExpenseType.bankLoan,
+                        ));
                         Navigator.of(context).pop();
                       },
                       onCancel: () => Navigator.of(context).pop(),
@@ -425,6 +435,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     category: LiabilityCategory.bankLoan,
                     totalDebt: amount,
                     monthlyPayment: monthlyPayment,
+                  ));
+                  // Füge den Kreditbetrag zu den Ersparnissen hinzu
+                  playerProvider.updatePlayerStats(
+                    savings: playerProvider.playerData!.savings + amount,
+                  );
+                  // Füge die monatliche Rate als Ausgabe hinzu
+                  playerProvider.addExpense(Expense(
+                    name: 'Bankdarlehen Zahlung',
+                    amount: monthlyPayment,
+                    type: ExpenseType.bankLoan,
                   ));
                   Navigator.of(context).pop();
                 }
