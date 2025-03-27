@@ -584,7 +584,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: Colors.transparent,
                 appBar: AppBar(
                   backgroundColor: Theme.of(context).cardColor.withOpacity(0.9),
-                  title: const Text('Cashflow'),
+                  title: Row(
+                    children: [
+                      Container(
+                        width: 150,
+                        height: 150,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            height: 150,
+                            width: 150,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text('Cashflow'),
+                    ],
+                  ),
                   actions: const [
                     ThemeToggleButton(),
                   ],
@@ -595,7 +612,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Center(
                           child: Card(
-                            margin: const EdgeInsets.all(16),
+                            margin: const EdgeInsets.all(50),
                             color: Theme.of(context).cardColor.withOpacity(0.9),
                             child: Padding(
                               padding: const EdgeInsets.all(20),
