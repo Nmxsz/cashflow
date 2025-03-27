@@ -48,6 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'schnickschnack':
         _showSchnickschnackDialog(context);
         break;
+      case 'babyparty':
+        _showBabypartyDialog(context);
+        break;
     }
   }
 
@@ -523,6 +526,49 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showBabypartyDialog(BuildContext context) {
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    final playerData = playerProvider.playerData!;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Babyparty! 🎉'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Du bekommst ein Kind!'),
+            const SizedBox(height: 16),
+            Text('Aktuelle Anzahl Kinder: ${playerData.numberOfChildren}'),
+            Text('Kosten pro Kind: ${playerData.costPerChild} €'),
+            Text('Zusätzliche monatliche Kosten: ${playerData.costPerChild} €'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              playerProvider.addChild();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                      'Herzlichen Glückwunsch! Ein neues Kind wurde geboren! 🎉'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text('Kind hinzufügen'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PlayerProvider>(
@@ -678,6 +724,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icon(Icons.shopping_cart),
                         SizedBox(width: 8),
                         Text('Schnickschnack kaufen'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'babyparty',
+                    child: Row(
+                      children: [
+                        Icon(Icons.child_care),
+                        SizedBox(width: 8),
+                        Text('Babyparty!'),
                       ],
                     ),
                   ),

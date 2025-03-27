@@ -173,19 +173,25 @@ class PlayerProvider extends ChangeNotifier {
   // Entfernt einen Schnickschnack
   Future<void> removeSchnickschnack(Schnickschnack item) async {
     if (_playerData != null) {
-      try {
-        // Entferne den Schnickschnack
-        _playerData!.removeSchnickschnack(item);
+      _playerData =
+          await _playerService.removeSchnickschnack(_playerData!, item);
+      notifyListeners();
+    }
+  }
 
-        // Speichere die aktualisierten Daten
-        await _playerService.savePlayerData(_playerData!);
+  // Fügt ein Kind hinzu
+  Future<void> addChild() async {
+    if (_playerData != null) {
+      _playerData = await _playerService.addChild(_playerData!);
+      notifyListeners();
+    }
+  }
 
-        // Benachrichtige die Listener
-        notifyListeners();
-      } catch (e) {
-        print('Fehler beim Entfernen von Schnickschnack: $e');
-        rethrow; // Werfe den Fehler weiter, damit er im UI behandelt werden kann
-      }
+  // Entfernt ein Kind
+  Future<void> removeChild() async {
+    if (_playerData != null) {
+      _playerData = await _playerService.removeChild(_playerData!);
+      notifyListeners();
     }
   }
 }

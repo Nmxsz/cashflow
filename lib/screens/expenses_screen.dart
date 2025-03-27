@@ -115,6 +115,7 @@ class ExpensesScreen extends StatelessWidget {
                             liability.monthlyPayment,
                             Icons.trending_down,
                             Colors.red,
+                            playerData,
                           ))
                       .toList(),
                   const SizedBox(height: 16),
@@ -136,6 +137,7 @@ class ExpensesScreen extends StatelessWidget {
                             expense.amount,
                             Icons.money_off,
                             Colors.orange,
+                            playerData,
                           ))
                       .toList(),
                 ],
@@ -182,15 +184,17 @@ class ExpensesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildExpenseItem(
-      String title, int amount, IconData icon, Color color) {
+  Widget _buildExpenseItem(String title, int amount, IconData icon, Color color,
+      PlayerData playerData) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: Icon(icon, color: color),
         title: Text(title),
         trailing: Text(
-          '$amount €',
+          title == 'Kinder Ausgaben'
+              ? '${amount * playerData.numberOfChildren} € (${playerData.numberOfChildren} Kinder)'
+              : '$amount €',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: color,

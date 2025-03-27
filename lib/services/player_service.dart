@@ -259,4 +259,18 @@ class PlayerService {
     await savePlayerData(playerData);
     return playerData;
   }
+
+  // Fügt ein Kind hinzu
+  Future<PlayerData> addChild(PlayerData playerData) async {
+    playerData.addChild();
+    await savePlayerData(playerData);
+    return playerData;
+  }
+
+  // Entfernt ein Kind
+  Future<PlayerData> removeChild(PlayerData playerData) async {
+    playerData.removeChild();
+    await savePlayerData(playerData);
+    return playerData;
+  }
 }

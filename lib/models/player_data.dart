@@ -2,6 +2,7 @@ import 'asset.dart';
 import 'liability.dart';
 import 'expense.dart';
 import 'schnickschnack.dart';
+import 'enums.dart';
 
 class PlayerData {
   final String id;
@@ -11,6 +12,7 @@ class PlayerData {
   int totalExpenses;
   int cashflow;
   int costPerChild;
+  int numberOfChildren;
   int savings;
   int passiveIncome;
   bool isReady;
@@ -27,6 +29,7 @@ class PlayerData {
     required this.totalExpenses,
     required this.cashflow,
     required this.costPerChild,
+    this.numberOfChildren = 0,
     this.savings = 0,
     this.passiveIncome = 0,
     this.isReady = false,
@@ -54,8 +57,19 @@ class PlayerData {
     );
 
     // Berechne die monatlichen Ausgaben
-    totalExpenses =
-        expenses.fold<int>(0, (sum, expense) => sum + expense.amount);
+    int totalExpensesAmount = expenses.fold<int>(
+      0,
+      (sum, expense) {
+        // Wenn es sich um Kinderausgaben handelt, multipliziere mit der Anzahl der Kinder
+        if (expense.type == ExpenseType.perChild) {
+          return sum + (costPerChild * numberOfChildren);
+        }
+        return sum + expense.amount;
+      },
+    );
+
+    // Aktualisiere die Gesamtausgaben
+    totalExpenses = totalExpensesAmount;
 
     // Berechne den Cashflow (Einkommen - Ausgaben)
     cashflow = salary + passiveIncome - totalExpenses;
@@ -148,6 +162,20 @@ class PlayerData {
     updateCashflow();
   }
 
+  // Fügt ein Kind hinzu
+  void addChild() {
+    numberOfChildren++;
+    updateCashflow();
+  }
+
+  // Entfernt ein Kind
+  void removeChild() {
+    if (numberOfChildren > 0) {
+      numberOfChildren--;
+      updateCashflow();
+    }
+  }
+
   PlayerData copyWith({
     String? id,
     String? name,
@@ -156,6 +184,7 @@ class PlayerData {
     int? totalExpenses,
     int? cashflow,
     int? costPerChild,
+    int? numberOfChildren,
     int? savings,
     int? passiveIncome,
     bool? isReady,
@@ -172,6 +201,7 @@ class PlayerData {
       totalExpenses: totalExpenses ?? this.totalExpenses,
       cashflow: cashflow ?? this.cashflow,
       costPerChild: costPerChild ?? this.costPerChild,
+      numberOfChildren: numberOfChildren ?? this.numberOfChildren,
       savings: savings ?? this.savings,
       passiveIncome: passiveIncome ?? this.passiveIncome,
       isReady: isReady ?? this.isReady,
@@ -191,6 +221,7 @@ class PlayerData {
       'totalExpenses': totalExpenses,
       'cashflow': cashflow,
       'costPerChild': costPerChild,
+      'numberOfChildren': numberOfChildren,
       'savings': savings,
       'passiveIncome': passiveIncome,
       'isReady': isReady,
@@ -211,6 +242,7 @@ class PlayerData {
       totalExpenses: json['totalExpenses'] as int,
       cashflow: json['cashflow'] as int,
       costPerChild: json['costPerChild'] as int,
+      numberOfChildren: json['numberOfChildren'] as int? ?? 0,
       savings: json['savings'] as int,
       passiveIncome: json['passiveIncome'] as int,
       isReady: json['isReady'] as bool? ?? false,

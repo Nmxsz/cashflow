@@ -66,8 +66,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final TextEditingController _totalExpensesController =
       TextEditingController();
 
-  
-
   String? _selectedProfession;
 
   @override
@@ -219,8 +217,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           profession.consumerPayment.toString(); // Verbraucherkredit
       _expenseControllers[6].text =
           profession.otherExpenses.toString(); // Sonstige
-      _expenseControllers[7].text =
-          profession.costPerChild.toString(); // Kinder
+      // Don't set children expenses initially
+      _expenseControllers[7].text = '0'; // Kinder
 
       // Set liabilities
       _liabilityAmountControllers[0].text =
