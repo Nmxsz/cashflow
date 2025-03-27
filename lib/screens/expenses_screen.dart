@@ -27,20 +27,8 @@ class ExpensesScreen extends StatelessWidget {
             );
           }
 
-          // Berechne die Gesamtausgaben aus allen Quellen
-          int totalMonthlyExpenses = 0;
-
-          // Addiere die monatlichen Zahlungen aus Verbindlichkeiten
-          for (var liability in playerData.liabilities) {
-            if (liability.category != 'Immobilien-Hypothek') {
-              totalMonthlyExpenses += liability.monthlyPayment;
-            }
-          }
-
-          // Addiere die sonstigen monatlichen Ausgaben
-          for (var expense in playerData.expenses) {
-            totalMonthlyExpenses += expense.amount;
-          }
+          // Verwende die Gesamtausgaben direkt aus playerData
+          int totalMonthlyExpenses = playerData.totalExpenses;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
