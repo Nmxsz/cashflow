@@ -64,6 +64,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'tax_audit':
         _showTaxAuditDialog(context);
         break;
+      case 'divorce':
+        _showDivorceDialog(context);
+        break;
     }
   }
 
@@ -791,6 +794,74 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showDivorceDialog(BuildContext context) {
+    final playerProvider = Provider.of<PlayerProvider>(context, listen: false);
+    final playerData = playerProvider.playerData;
+
+    if (playerData == null) return;
+
+    // Prüfe, ob Ersparnisse vorhanden sind
+    if (playerData.savings <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Du hast keine Ersparnisse zu verlieren!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Scheidung'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Möchtest du dich wirklich scheiden lassen?'),
+            const SizedBox(height: 16),
+            Text('Deine Ersparnisse: ${playerData.savings} €'),
+            const SizedBox(height: 8),
+            const Text(
+              'Hinweis: Bei einer Scheidung gehen alle Ersparnisse verloren!',
+              style: TextStyle(color: Colors.red),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Erstelle eine Kopie der Spielerdaten mit den aktualisierten Werten
+              final updatedPlayerData = playerData.copyWith(
+                savings: 0, // Setze alle Ersparnisse auf 0
+              );
+
+              // Aktualisiere die Spielerdaten
+              playerProvider.setPlayerData(updatedPlayerData);
+
+              Navigator.of(context).pop();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                      'Du hast dich scheiden lassen und alle Ersparnisse verloren!'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Scheiden lassen'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PlayerProvider>(
@@ -1066,6 +1137,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         Icon(Icons.account_balance, color: Colors.red),
                         SizedBox(width: 8),
                         Text('Steuerprüfung'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'divorce',
+                    child: Row(
+                      children: [
+                        Icon(Icons.favorite_border, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Scheidung'),
                       ],
                     ),
                   ),
