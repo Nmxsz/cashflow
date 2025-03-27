@@ -568,238 +568,116 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<PlayerProvider>(
-      builder: (context, playerProvider, child) {
-        final playerData = playerProvider.playerData;
-        if (playerData == null) {
-          return Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/CashflowIMG.jpg'),
-                fit: BoxFit.cover,
+    return Scaffold(
+      body: Consumer<PlayerProvider>(
+        builder: (context, playerProvider, child) {
+          final playerData = playerProvider.playerData;
+          if (playerData == null) {
+            return Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/CashflowIMG.jpg'),
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-            child: Scaffold(
-              backgroundColor: Colors.transparent,
-              appBar: AppBar(
+              child: Scaffold(
                 backgroundColor: Colors.transparent,
-                actions: const [
-                  ThemeToggleButton(),
-                ],
-              ),
-              body: Center(
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Center(
-                        child: Card(
-                          margin: const EdgeInsets.all(16),
-                          color: Theme.of(context).cardColor.withOpacity(0.9),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text(
-                                  'Willkommen bei Cashflow Tracker!',
-                                  style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 20),
-                                const Text(
-                                  'Wähle deinen Spielmodus:',
-                                  style: TextStyle(fontSize: 16),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 30),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            ProfileSetupScreen(
-                                          player: PlayerData(
-                                            id: const Uuid().v4(),
-                                            name: '',
-                                            profession: '',
-                                            salary: 0,
-                                            savings: 0,
-                                            assets: [],
-                                            liabilities: [],
-                                            expenses: [],
-                                            totalExpenses: 0,
-                                            cashflow: 0,
-                                            costPerChild: 0,
+                appBar: AppBar(
+                  backgroundColor: Theme.of(context).cardColor.withOpacity(0.9),
+                  title: const Text('Cashflow'),
+                  actions: const [
+                    ThemeToggleButton(),
+                  ],
+                ),
+                body: Center(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Center(
+                          child: Card(
+                            margin: const EdgeInsets.all(16),
+                            color: Theme.of(context).cardColor.withOpacity(0.9),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    'Willkommen bei Cashflow Tracker!',
+                                    style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  const Text(
+                                    'Wähle deinen Spielmodus:',
+                                    style: TextStyle(fontSize: 16),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 30),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              ProfileSetupScreen(
+                                            player: PlayerData(
+                                              id: const Uuid().v4(),
+                                              name: '',
+                                              profession: '',
+                                              salary: 0,
+                                              savings: 0,
+                                              assets: [],
+                                              liabilities: [],
+                                              expenses: [],
+                                              totalExpenses: 0,
+                                              cashflow: 0,
+                                              costPerChild: 0,
+                                            ),
+                                            onProfileSaved: (player) {
+                                              Provider.of<PlayerProvider>(
+                                                      context,
+                                                      listen: false)
+                                                  .setPlayerData(player);
+                                              Navigator.pop(context);
+                                            },
                                           ),
-                                          onProfileSaved: (player) {
-                                            Provider.of<PlayerProvider>(context,
-                                                    listen: false)
-                                                .setPlayerData(player);
-                                            Navigator.pop(context);
-                                          },
                                         ),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('Singleplayer'),
-                                ),
-                                const SizedBox(height: 16),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const MultiplayerRoomScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('Multiplayer'),
-                                ),
-                              ],
+                                      );
+                                    },
+                                    child: const Text('Singleplayer'),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const MultiplayerRoomScreen(),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text('Multiplayer'),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    const FeatureFooter(),
-                  ],
+                      const FeatureFooter(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        }
+            );
+          }
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Cashflow Tracker'),
-            actions: [
-              Consumer<MultiplayerProvider>(
-                builder: (context, multiplayerProvider, child) {
-                  if (!multiplayerProvider.isInRoom)
-                    return const SizedBox.shrink();
-
-                  return IconButton(
-                    icon: const Icon(Icons.people),
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Spieler auswählen'),
-                          content: SizedBox(
-                            width: double.maxFinite,
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: multiplayerProvider
-                                  .currentRoom!.players.length,
-                              itemBuilder: (context, index) {
-                                final player = multiplayerProvider
-                                    .currentRoom!.players[index];
-                                return ListTile(
-                                  title: Text(player.name),
-                                  subtitle: Text(player.profession),
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            PlayerOverviewScreen(
-                                          playerId: player.id,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('Schließen'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () {
-                  playerProvider.resetPlayerData();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Profil zurückgesetzt')),
-                  );
-                },
-                tooltip: 'Neues Spiel',
-              ),
-              const ThemeToggleButton(),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert),
-                tooltip: 'Menü öffnen',
-                onSelected: (action) => _handleMenuAction(context, action),
-                itemBuilder: (BuildContext context) => [
-                  const PopupMenuItem<String>(
-                    value: 'credit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.credit_card),
-                        SizedBox(width: 8),
-                        Text('Kredit aufnehmen'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'buy_property',
-                    child: Row(
-                      children: [
-                        Icon(Icons.home),
-                        SizedBox(width: 8),
-                        Text('Immobilie kaufen'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'add_money',
-                    child: Row(
-                      children: [
-                        Icon(Icons.add_circle, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text('Geld hinzufügen'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'schnickschnack',
-                    child: Row(
-                      children: [
-                        Icon(Icons.shopping_cart),
-                        SizedBox(width: 8),
-                        Text('Schnickschnack kaufen'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'babyparty',
-                    child: Row(
-                      children: [
-                        Icon(Icons.child_care),
-                        SizedBox(width: 8),
-                        Text('Babyparty!'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          body: Column(
+          return Column(
             children: [
               Expanded(
                 child: SingleChildScrollView(
@@ -933,9 +811,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const FeatureFooter(),
             ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
