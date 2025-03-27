@@ -84,9 +84,15 @@ class PlayerProvider extends ChangeNotifier {
           monthlyPayment:
               existingLoan.monthlyPayment + liability.monthlyPayment,
         );
-        playerData!.liabilities[existingBankLoanIndex] = updatedLoan;
-      } else {
-        // Füge ein neues Bankdarlehen hinzu
+
+        // Wenn das aktualisierte Bankdarlehen 0€ beträgt, lösche es
+        if (updatedLoan.totalDebt == 0) {
+          playerData!.liabilities.removeAt(existingBankLoanIndex);
+        } else {
+          playerData!.liabilities[existingBankLoanIndex] = updatedLoan;
+        }
+      } else if (liability.totalDebt > 0) {
+        // Füge ein neues Bankdarlehen nur hinzu, wenn es größer als 0€ ist
         playerData!.liabilities.add(liability);
       }
     } else {
@@ -126,12 +132,19 @@ class PlayerProvider extends ChangeNotifier {
           amount: existingExpense.amount + expense.amount,
           type: ExpenseType.bankLoan,
         );
-        playerData!.expenses[existingBankLoanIndex] = updatedExpense;
-        playerData!.totalExpenses = playerData!.totalExpenses -
-            existingExpense.amount +
-            updatedExpense.amount;
-      } else {
-        // Füge eine neue Bankdarlehen-Zahlung hinzu
+
+        // Wenn die aktualisierte Zahlung 0€ beträgt, lösche sie
+        if (updatedExpense.amount == 0) {
+          playerData!.expenses.removeAt(existingBankLoanIndex);
+          playerData!.totalExpenses -= existingExpense.amount;
+        } else {
+          playerData!.expenses[existingBankLoanIndex] = updatedExpense;
+          playerData!.totalExpenses = playerData!.totalExpenses -
+              existingExpense.amount +
+              updatedExpense.amount;
+        }
+      } else if (expense.amount > 0) {
+        // Füge eine neue Bankdarlehen-Zahlung nur hinzu, wenn sie größer als 0€ ist
         playerData!.expenses.add(expense);
         playerData!.totalExpenses += expense.amount;
       }

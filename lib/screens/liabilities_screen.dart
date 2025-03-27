@@ -313,15 +313,44 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
 
     // Berechne die neue monatliche Rate (100€ pro 1000€ zurückgezahlt)
     final reducedPayment = (repaymentAmount ~/ 1000) * 100;
+    final newTotalDebt = liability.totalDebt - repaymentAmount;
+    final newMonthlyPayment = liability.monthlyPayment - reducedPayment;
 
-    final updatedLiability = Liability(
-      name: liability.name,
-      category: liability.category,
-      totalDebt: liability.totalDebt - repaymentAmount,
-      monthlyPayment: liability.monthlyPayment - reducedPayment,
-    );
+    // Wenn das Bankdarlehen vollständig zurückgezahlt wurde, lösche es
+    if (newTotalDebt <= 0) {
+      playerProvider.deleteLiability(index);
+      // Lösche auch die zugehörige Ausgabe
+      final bankLoanExpenseIndex = playerData.expenses.indexWhere(
+        (e) => e.type == ExpenseType.bankLoan,
+      );
+      if (bankLoanExpenseIndex != -1) {
+        playerProvider.deleteExpense(bankLoanExpenseIndex);
+      }
+    } else {
+      // Aktualisiere das Bankdarlehen
+      final updatedLiability = Liability(
+        name: liability.name,
+        category: liability.category,
+        totalDebt: newTotalDebt,
+        monthlyPayment: newMonthlyPayment,
+      );
+      playerProvider.updateLiability(index, updatedLiability);
 
-    playerProvider.updateLiability(index, updatedLiability);
+      // Aktualisiere die Bankdarlehen-Zahlung in den Ausgaben
+      final bankLoanExpenseIndex = playerData.expenses.indexWhere(
+        (e) => e.type == ExpenseType.bankLoan,
+      );
+
+      if (bankLoanExpenseIndex != -1) {
+        final existingExpense = playerData.expenses[bankLoanExpenseIndex];
+        final updatedExpense = Expense(
+          name: 'Bankdarlehen Zahlung',
+          amount: existingExpense.amount - reducedPayment,
+          type: ExpenseType.bankLoan,
+        );
+        playerProvider.updateExpense(bankLoanExpenseIndex, updatedExpense);
+      }
+    }
 
     // Aktualisiere die Spielerdaten
     playerProvider.updatePlayerStats(
@@ -331,21 +360,6 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
           playerData.passiveIncome -
           (playerData.totalExpenses - reducedPayment),
     );
-
-    // Aktualisiere die Bankdarlehen-Zahlung in den Ausgaben
-    final bankLoanExpenseIndex = playerData.expenses.indexWhere(
-      (e) => e.type == ExpenseType.bankLoan,
-    );
-
-    if (bankLoanExpenseIndex != -1) {
-      final existingExpense = playerData.expenses[bankLoanExpenseIndex];
-      final updatedExpense = Expense(
-        name: 'Bankdarlehen Zahlung',
-        amount: existingExpense.amount - reducedPayment,
-        type: ExpenseType.bankLoan,
-      );
-      playerProvider.updateExpense(bankLoanExpenseIndex, updatedExpense);
-    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -429,16 +443,21 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
                 .where((l) => l.category == LiabilityCategory.bankLoan)
                 .fold<int>(0, (sum, l) => sum + l.monthlyPayment);
 
-            playerProvider.updateExpense(
-              expenseIndex,
-              Expense(
-                name: 'Bankdarlehen Zahlung',
-                amount: remainingBankLoanPayments,
-                type: ExpenseType.bankLoan,
-              ),
-            );
-            newTotalExpenses =
-                playerData.totalExpenses - liability.monthlyPayment;
+            if (remainingBankLoanPayments > 0) {
+              playerProvider.updateExpense(
+                expenseIndex,
+                Expense(
+                  name: 'Bankdarlehen Zahlung',
+                  amount: remainingBankLoanPayments,
+                  type: ExpenseType.bankLoan,
+                ),
+              );
+              newTotalExpenses =
+                  playerData.totalExpenses - liability.monthlyPayment;
+            } else {
+              playerProvider.deleteExpense(expenseIndex);
+              newTotalExpenses = playerData.totalExpenses - expense.amount;
+            }
           }
         } else {
           playerProvider.deleteExpense(expenseIndex);
