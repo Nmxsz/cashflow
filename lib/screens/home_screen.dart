@@ -1140,7 +1140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     value: 'credit',
                     child: Row(
                       children: [
-                        Icon(Icons.credit_card),
+                        Icon(Icons.credit_card, color: Colors.orange),
                         SizedBox(width: 8),
                         Text('Kredit aufnehmen'),
                       ],
@@ -1150,7 +1150,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     value: 'buy_property',
                     child: Row(
                       children: [
-                        Icon(Icons.home),
+                        Icon(Icons.home, color: Colors.green),
                         SizedBox(width: 8),
                         Text('Immobilie kaufen'),
                       ],
@@ -1170,7 +1170,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     value: 'schnickschnack',
                     child: Row(
                       children: [
-                        Icon(Icons.shopping_cart),
+                        Icon(Icons.shopping_cart, color: Colors.purple),
                         SizedBox(width: 8),
                         Text('Schnickschnack kaufen'),
                       ],
@@ -1180,7 +1180,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     value: 'babyparty',
                     child: Row(
                       children: [
-                        Icon(Icons.child_care),
+                        Icon(Icons.child_care, color: Colors.pink),
                         SizedBox(width: 8),
                         Text('Babyparty!'),
                       ],
