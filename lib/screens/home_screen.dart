@@ -17,6 +17,7 @@ import 'package:uuid/uuid.dart';
 import '../widgets/bankruptcy_dialog.dart';
 import '../providers/multiplayer_provider.dart';
 import 'player_overview_screen.dart';
+import '../widgets/feature_footer.dart';
 
 // Global key für den Zugriff auf den HomeScreen-State
 final GlobalKey<_HomeScreenState> homeScreenKey = GlobalKey<_HomeScreenState>();
@@ -570,7 +571,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<PlayerProvider>(
       builder: (context, playerProvider, child) {
         final playerData = playerProvider.playerData;
-
         if (playerData == null) {
           return Container(
             decoration: const BoxDecoration(
@@ -583,80 +583,91 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: Colors.transparent,
               appBar: AppBar(
                 backgroundColor: Colors.transparent,
-                actions: [
-                  const ThemeToggleButton(),
+                actions: const [
+                  ThemeToggleButton(),
                 ],
               ),
               body: Center(
-                child: Card(
-                  margin: const EdgeInsets.all(16),
-                  color: Theme.of(context).cardColor.withOpacity(0.9),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Willkommen bei Cashflow Tracker!',
-                          style: TextStyle(
-                              fontSize: 24, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Wähle deinen Spielmodus:',
-                          style: TextStyle(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 30),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProfileSetupScreen(
-                                  player: PlayerData(
-                                    id: const Uuid().v4(),
-                                    name: '',
-                                    profession: '',
-                                    salary: 0,
-                                    savings: 0,
-                                    assets: [],
-                                    liabilities: [],
-                                    expenses: [],
-                                    totalExpenses: 0,
-                                    cashflow: 0,
-                                    costPerChild: 0,
-                                  ),
-                                  onProfileSaved: (player) {
-                                    Provider.of<PlayerProvider>(context,
-                                            listen: false)
-                                        .setPlayerData(player);
-                                    Navigator.pop(context);
-                                  },
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Center(
+                        child: Card(
+                          margin: const EdgeInsets.all(16),
+                          color: Theme.of(context).cardColor.withOpacity(0.9),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Willkommen bei Cashflow Tracker!',
+                                  style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
                                 ),
-                              ),
-                            );
-                          },
-                          child: const Text('Singleplayer'),
+                                const SizedBox(height: 20),
+                                const Text(
+                                  'Wähle deinen Spielmodus:',
+                                  style: TextStyle(fontSize: 16),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 30),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            ProfileSetupScreen(
+                                          player: PlayerData(
+                                            id: const Uuid().v4(),
+                                            name: '',
+                                            profession: '',
+                                            salary: 0,
+                                            savings: 0,
+                                            assets: [],
+                                            liabilities: [],
+                                            expenses: [],
+                                            totalExpenses: 0,
+                                            cashflow: 0,
+                                            costPerChild: 0,
+                                          ),
+                                          onProfileSaved: (player) {
+                                            Provider.of<PlayerProvider>(context,
+                                                    listen: false)
+                                                .setPlayerData(player);
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('Singleplayer'),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const MultiplayerRoomScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('Multiplayer'),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const MultiplayerRoomScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text('Multiplayer'),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    const FeatureFooter(),
+                  ],
                 ),
               ),
             ),
@@ -788,130 +799,140 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          body: SingleChildScrollView(
-            controller: scrollController,
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Profilübersicht
-                Card(
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          playerData.name,
-                          style: const TextStyle(
-                              fontSize: 24, fontWeight: FontWeight.bold),
+          body: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Profilübersicht
+                      Card(
+                        elevation: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                playerData.name,
+                                style: const TextStyle(
+                                    fontSize: 24, fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                playerData.profession,
+                                style: const TextStyle(
+                                    fontSize: 18, color: Colors.grey),
+                              ),
+                              const Divider(),
+                              _buildInfoRow('Gehalt', '${playerData.salary} €'),
+                              _buildInfoRow('Passives Einkommen',
+                                  '${playerData.passiveIncome} €'),
+                              _buildInfoRow(
+                                  'Ausgaben', '${playerData.totalExpenses} €'),
+                              const Divider(),
+                              _buildInfoRow(
+                                'Cashflow',
+                                '${playerData.cashflow} €',
+                                valueColor: playerData.cashflow >= 0
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                              _buildInfoRow(
+                                  'Ersparnis', '${playerData.savings} €'),
+                              const Divider(),
+                              _buildInfoRow(
+                                'Gesamtvermögen',
+                                '${playerData.netWorth} €',
+                                valueColor: playerData.netWorth >= 0
+                                    ? Colors.green
+                                    : Colors.red,
+                                valueFontSize: 18.0,
+                                labelFontWeight: FontWeight.bold,
+                              ),
+                            ],
+                          ),
                         ),
-                        Text(
-                          playerData.profession,
-                          style:
-                              const TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                        const Divider(),
-                        _buildInfoRow('Gehalt', '${playerData.salary} €'),
-                        _buildInfoRow('Passives Einkommen',
-                            '${playerData.passiveIncome} €'),
-                        _buildInfoRow(
-                            'Ausgaben', '${playerData.totalExpenses} €'),
-                        const Divider(),
-                        _buildInfoRow(
-                          'Cashflow',
-                          '${playerData.cashflow} €',
-                          valueColor: playerData.cashflow >= 0
-                              ? Colors.green
-                              : Colors.red,
-                        ),
-                        _buildInfoRow('Ersparnis', '${playerData.savings} €'),
-                        const Divider(),
-                        _buildInfoRow(
-                          'Gesamtvermögen',
-                          '${playerData.netWorth} €',
-                          valueColor: playerData.netWorth >= 0
-                              ? Colors.green
-                              : Colors.red,
-                          valueFontSize: 18.0,
-                          labelFontWeight: FontWeight.bold,
-                        ),
-                      ],
-                    ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Aktionen
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        childAspectRatio: 1.5,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        children: [
+                          _buildActionCard(
+                            context,
+                            'Vermögenswerte',
+                            Icons.trending_up,
+                            Colors.green,
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const AssetsScreen()),
+                            ),
+                          ),
+                          _buildActionCard(
+                            context,
+                            'Verbindlichkeiten',
+                            Icons.trending_down,
+                            Colors.red,
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const LiabilitiesScreen()),
+                            ),
+                          ),
+                          _buildActionCard(
+                            context,
+                            'Ausgaben',
+                            Icons.money_off,
+                            Colors.orange,
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const ExpensesScreen()),
+                            ),
+                          ),
+                          _buildActionCard(
+                            context,
+                            'Zahltag',
+                            Icons.payment,
+                            Colors.blue,
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const PaydayScreen()),
+                            ),
+                          ),
+                          _buildActionCard(
+                            context,
+                            'Schnickschnack',
+                            Icons.shopping_bag,
+                            Colors.purple,
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const SchnickschnackScreen()),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-
-                const SizedBox(height: 20),
-
-                // Aktionen
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  childAspectRatio: 1.5,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  children: [
-                    _buildActionCard(
-                      context,
-                      'Vermögenswerte',
-                      Icons.trending_up,
-                      Colors.green,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const AssetsScreen()),
-                      ),
-                    ),
-                    _buildActionCard(
-                      context,
-                      'Verbindlichkeiten',
-                      Icons.trending_down,
-                      Colors.red,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const LiabilitiesScreen()),
-                      ),
-                    ),
-                    _buildActionCard(
-                      context,
-                      'Ausgaben',
-                      Icons.money_off,
-                      Colors.orange,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const ExpensesScreen()),
-                      ),
-                    ),
-                    _buildActionCard(
-                      context,
-                      'Zahltag',
-                      Icons.payment,
-                      Colors.blue,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const PaydayScreen()),
-                      ),
-                    ),
-                    _buildActionCard(
-                      context,
-                      'Schnickschnack',
-                      Icons.shopping_bag,
-                      Colors.purple,
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const SchnickschnackScreen()),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+              const FeatureFooter(),
+            ],
           ),
         );
       },
