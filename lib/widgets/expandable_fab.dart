@@ -126,12 +126,24 @@ class _ExpandableFabState extends State<ExpandableFab>
           shape: const CircleBorder(),
           clipBehavior: Clip.antiAlias,
           elevation: 4,
-          child: InkWell(
-            onTap: _toggle,
-            child: Icon(
-              _open ? Icons.close : Icons.add,
-              size: 32,
-              color: Theme.of(context).primaryColor,
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF2196F3), // Blau
+                  Color(0xFF9C27B0), // Lila
+                ],
+              ),
+            ),
+            child: InkWell(
+              onTap: _toggle,
+              child: Icon(
+                _open ? Icons.close : Icons.add,
+                size: 32,
+                color: Colors.white,
+              ),
             ),
           ),
         ),
