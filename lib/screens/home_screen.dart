@@ -6,6 +6,7 @@ import '../services/player_service.dart';
 import '../providers/player_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/theme_toggle_button.dart';
+import '../widgets/expandable_fab.dart';
 import 'profile_setup_screen.dart';
 import 'assets_screen.dart';
 import 'liabilities_screen.dart';
@@ -1151,113 +1152,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 tooltip: 'Neues Spiel',
               ),
               const ThemeToggleButton(),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert),
-                tooltip: 'Menü öffnen',
-                onSelected: (action) => _handleMenuAction(context, action),
-                itemBuilder: (BuildContext context) => [
-                  const PopupMenuItem<String>(
-                    value: 'credit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.credit_card, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Text('Kredit aufnehmen'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'buy_property',
-                    child: Row(
-                      children: [
-                        Icon(Icons.home, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text('Immobilie kaufen'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'add_money',
-                    child: Row(
-                      children: [
-                        Icon(Icons.add_circle, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text('Geld hinzufügen'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'schnickschnack',
-                    child: Row(
-                      children: [
-                        Icon(Icons.shopping_cart, color: Colors.purple),
-                        SizedBox(width: 8),
-                        Text('Schnickschnack kaufen'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'babyparty',
-                    child: Row(
-                      children: [
-                        Icon(Icons.child_care, color: Colors.pink),
-                        SizedBox(width: 8),
-                        Text('Babyparty!'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'arbeitslos',
-                    child: Row(
-                      children: [
-                        Icon(Icons.work_off, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Text('Arbeitslos melden'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'donate',
-                    child: Row(
-                      children: [
-                        Icon(Icons.volunteer_activism, color: Colors.blue),
-                        SizedBox(width: 8),
-                        Text('Spenden'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'tax_audit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.account_balance, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Steuerprüfung'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'divorce',
-                    child: Row(
-                      children: [
-                        Icon(Icons.favorite_border, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Scheidung'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'court_hearing',
-                    child: Row(
-                      children: [
-                        Icon(Icons.gavel, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Gerichtsverhandlung'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
           body: Column(
@@ -1391,6 +1285,51 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+              ),
+            ],
+          ),
+          floatingActionButton: ExpandableFab(
+            distance: 112.0,
+            children: [
+              ActionButton(
+                onPressed: () => _handleMenuAction(context, 'credit'),
+                icon: const Icon(Icons.credit_card, color: Colors.orange),
+              ),
+              ActionButton(
+                onPressed: () => _handleMenuAction(context, 'buy_property'),
+                icon: const Icon(Icons.home, color: Colors.green),
+              ),
+              ActionButton(
+                onPressed: () => _handleMenuAction(context, 'add_money'),
+                icon: const Icon(Icons.add_circle, color: Colors.green),
+              ),
+              ActionButton(
+                onPressed: () => _handleMenuAction(context, 'schnickschnack'),
+                icon: const Icon(Icons.shopping_cart, color: Colors.purple),
+              ),
+              ActionButton(
+                onPressed: () => _handleMenuAction(context, 'babyparty'),
+                icon: const Icon(Icons.child_care, color: Colors.pink),
+              ),
+              ActionButton(
+                onPressed: () => _handleMenuAction(context, 'arbeitslos'),
+                icon: const Icon(Icons.work_off, color: Colors.orange),
+              ),
+              ActionButton(
+                onPressed: () => _handleMenuAction(context, 'donate'),
+                icon: const Icon(Icons.volunteer_activism, color: Colors.blue),
+              ),
+              ActionButton(
+                onPressed: () => _handleMenuAction(context, 'tax_audit'),
+                icon: const Icon(Icons.account_balance, color: Colors.red),
+              ),
+              ActionButton(
+                onPressed: () => _handleMenuAction(context, 'divorce'),
+                icon: const Icon(Icons.favorite_border, color: Colors.red),
+              ),
+              ActionButton(
+                onPressed: () => _handleMenuAction(context, 'court_hearing'),
+                icon: const Icon(Icons.gavel, color: Colors.red),
               ),
             ],
           ),
