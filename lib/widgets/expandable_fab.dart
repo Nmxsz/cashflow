@@ -88,6 +88,8 @@ class _ExpandableFabState extends State<ExpandableFab>
   }
 
   List<Widget> _buildExpandingActionButtons() {
+    if (!_open) return [];
+
     final children = <Widget>[];
     final count = widget.children.length;
     const buttonSpacing = 35.0; // Konstanter Abstand zwischen den Buttons

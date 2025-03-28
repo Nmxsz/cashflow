@@ -605,12 +605,25 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _resetForm();
-          _showLiabilityForm(context);
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: SizedBox(
+        width: 56,
+        height: 56,
+        child: Material(
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          elevation: 4,
+          child: InkWell(
+            onTap: () {
+              _resetForm();
+              _showLiabilityForm(context);
+            },
+            child: Icon(
+              Icons.add,
+              size: 32,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+        ),
       ),
     );
   }
