@@ -609,6 +609,9 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
         width: 56,
         height: 56,
         child: Material(
+          color: Theme.of(context).brightness == Brightness.light
+              ? Colors.red.shade600
+              : Colors.red.shade400,
           shape: const CircleBorder(),
           clipBehavior: Clip.antiAlias,
           elevation: 4,
@@ -617,10 +620,10 @@ class _LiabilitiesScreenState extends State<LiabilitiesScreen> {
               _resetForm();
               _showLiabilityForm(context);
             },
-            child: Icon(
+            child: const Icon(
               Icons.add,
               size: 32,
-              color: Theme.of(context).primaryColor,
+              color: Colors.white,
             ),
           ),
         ),

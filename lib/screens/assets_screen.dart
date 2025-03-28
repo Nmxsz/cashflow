@@ -761,6 +761,9 @@ class _AssetsScreenState extends State<AssetsScreen> {
         width: 56,
         height: 56,
         child: Material(
+          color: Theme.of(context).brightness == Brightness.light
+              ? Colors.green.shade600
+              : Colors.green.shade400,
           shape: const CircleBorder(),
           clipBehavior: Clip.antiAlias,
           elevation: 4,
@@ -769,10 +772,10 @@ class _AssetsScreenState extends State<AssetsScreen> {
               _resetForm();
               _showAssetForm(context);
             },
-            child: Icon(
+            child: const Icon(
               Icons.add,
               size: 32,
-              color: Theme.of(context).primaryColor,
+              color: Colors.white,
             ),
           ),
         ),
