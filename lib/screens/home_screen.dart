@@ -1294,32 +1294,32 @@ class _HomeScreenState extends State<HomeScreen> {
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'credit'),
                 icon: const Icon(Icons.credit_card, color: Colors.orange),
-                label: 'Kredit',
+                label: 'Kredit nehmen',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'buy_property'),
                 icon: const Icon(Icons.home, color: Colors.green),
-                label: 'Immobilie',
+                label: 'Immobilie kaufen',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'add_money'),
                 icon: const Icon(Icons.add_circle, color: Colors.green),
-                label: 'Geld',
+                label: 'Geld hinzufügen',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'schnickschnack'),
                 icon: const Icon(Icons.shopping_cart, color: Colors.purple),
-                label: 'Schnickschnack',
+                label: 'Schnickschnack kaufen',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'babyparty'),
                 icon: const Icon(Icons.child_care, color: Colors.pink),
-                label: 'Baby',
+                label: 'Babyparty',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'arbeitslos'),
                 icon: const Icon(Icons.work_off, color: Colors.orange),
-                label: 'Arbeitslos',
+                label: 'Arbeitslos melden',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'donate'),
@@ -1329,17 +1329,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'tax_audit'),
                 icon: const Icon(Icons.account_balance, color: Colors.red),
-                label: 'Steuer',
+                label: 'Steuerprüfung',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'divorce'),
                 icon: const Icon(Icons.favorite_border, color: Colors.red),
-                label: 'Scheidung',
+                label: 'Scheidung beantragen',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'court_hearing'),
                 icon: const Icon(Icons.gavel, color: Colors.red),
-                label: 'Gericht',
+                label: 'Gerichtsverhandlung',
               ),
             ],
           ),
