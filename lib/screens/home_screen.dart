@@ -1294,42 +1294,52 @@ class _HomeScreenState extends State<HomeScreen> {
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'credit'),
                 icon: const Icon(Icons.credit_card, color: Colors.orange),
+                label: 'Kredit',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'buy_property'),
                 icon: const Icon(Icons.home, color: Colors.green),
+                label: 'Immobilie',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'add_money'),
                 icon: const Icon(Icons.add_circle, color: Colors.green),
+                label: 'Geld',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'schnickschnack'),
                 icon: const Icon(Icons.shopping_cart, color: Colors.purple),
+                label: 'Schnickschnack',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'babyparty'),
                 icon: const Icon(Icons.child_care, color: Colors.pink),
+                label: 'Baby',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'arbeitslos'),
                 icon: const Icon(Icons.work_off, color: Colors.orange),
+                label: 'Arbeitslos',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'donate'),
                 icon: const Icon(Icons.volunteer_activism, color: Colors.blue),
+                label: 'Spenden',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'tax_audit'),
                 icon: const Icon(Icons.account_balance, color: Colors.red),
+                label: 'Steuer',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'divorce'),
                 icon: const Icon(Icons.favorite_border, color: Colors.red),
+                label: 'Scheidung',
               ),
               ActionButton(
                 onPressed: () => _handleMenuAction(context, 'court_hearing'),
                 icon: const Icon(Icons.gavel, color: Colors.red),
+                label: 'Gericht',
               ),
             ],
           ),

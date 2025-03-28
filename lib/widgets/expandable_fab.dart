@@ -84,7 +84,8 @@ class _ExpandableFabState extends State<ExpandableFab>
             onTap: _toggle,
             child: Padding(
               padding: const EdgeInsets.all(8),
-              child: Icon(Icons.close, color: Theme.of(context).primaryColor),
+              child: Icon(Icons.close,
+                  size: 32, color: Theme.of(context).primaryColor),
             ),
           ),
         ),
@@ -128,9 +129,19 @@ class _ExpandableFabState extends State<ExpandableFab>
           opacity: _open ? 0.0 : 1.0,
           curve: const Interval(0.25, 1.0, curve: Curves.easeInOut),
           duration: const Duration(milliseconds: 250),
-          child: FloatingActionButton(
-            onPressed: _toggle,
-            child: const Icon(Icons.create),
+          child: SizedBox(
+            width: 56,
+            height: 56,
+            child: Material(
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              elevation: 4,
+              child: InkWell(
+                onTap: _toggle,
+                child: Icon(Icons.add,
+                    size: 32, color: Theme.of(context).primaryColor),
+              ),
+            ),
           ),
         ),
       ),
@@ -166,42 +177,75 @@ class _ExpandingActionButton extends StatelessWidget {
           0,
           progress.value *
               (maxDistance + (buttonSpacing * (totalCount - 1))) *
-              (1 - (index / (totalCount - 1))),
+              (index / (totalCount - 1)),
         );
         return Positioned(
           right: 4.0 + offset.dx,
-          bottom: 4.0 + offset.dy,
-          child: Transform.rotate(
-            angle: (1.0 - progress.value) * math.pi / 2,
-            child: child!,
-          ),
+          bottom: 4.0 + offset.dy + 56.0,
+          child: child!,
         );
       },
-      child: FadeTransition(opacity: progress, child: child),
+      child: FadeTransition(
+        opacity: CurvedAnimation(
+          parent: progress,
+          curve: Interval(
+            index / totalCount,
+            (index + 1) / totalCount,
+            curve: Curves.easeOut,
+          ),
+        ),
+        child: child,
+      ),
     );
   }
 }
 
 @immutable
 class ActionButton extends StatelessWidget {
-  const ActionButton({super.key, this.onPressed, required this.icon});
+  const ActionButton({
+    super.key,
+    this.onPressed,
+    required this.icon,
+    required this.label,
+  });
 
   final VoidCallback? onPressed;
   final Widget icon;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.secondary,
-      elevation: 4,
-      child: IconButton(
-        onPressed: onPressed,
-        icon: icon,
-        color: theme.colorScheme.onSecondary,
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.secondary,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: theme.colorScheme.onSecondary,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Material(
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          color: theme.colorScheme.secondary,
+          elevation: 4,
+          child: IconButton(
+            onPressed: onPressed,
+            icon: icon,
+            color: theme.colorScheme.onSecondary,
+          ),
+        ),
+      ],
     );
   }
 }
