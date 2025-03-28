@@ -6,6 +6,7 @@ import 'providers/player_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/multiplayer_provider.dart';
 import 'screens/home_screen.dart';
+import 'themes/app_themes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,13 +38,7 @@ class MainApp extends StatelessWidget {
         builder: (context, themeProvider, child) {
           return MaterialApp(
             title: 'Cashflow Tracker',
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: Brightness.light,
-              ),
-              useMaterial3: true,
-            ),
+            theme: AppThemes.currentTheme,
             darkTheme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
                 seedColor: Colors.blue,
