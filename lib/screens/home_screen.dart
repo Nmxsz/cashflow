@@ -611,17 +611,6 @@ class _HomeScreenState extends State<HomeScreen> {
     // Berechne die Gesamtausgaben
     final totalExpenses = playerData.totalExpenses;
 
-    // Prüfe, ob genügend Ersparnisse vorhanden sind
-    if (playerData.savings < totalExpenses) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nicht genügend Ersparnisse für die Arbeitslosigkeit!'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -632,13 +621,19 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Text('Möchtest du dich wirklich arbeitslos melden?'),
             const SizedBox(height: 16),
-            Text('Gesamtausgaben: $totalExpenses €'),
+            Text('Deine monatlichen Ausgaben: $totalExpenses €'),
             Text('Aktuelle Ersparnisse: ${playerData.savings} €'),
             const SizedBox(height: 8),
-            const Text(
-              'Hinweis: Die Gesamtausgaben werden von deinen Ersparnissen abgezogen.',
-              style: TextStyle(color: Colors.orange),
-            ),
+            if (playerData.savings < totalExpenses)
+              const Text(
+                'Warnung: Du hast nicht genügend Ersparnisse für die monatlichen Ausgaben!',
+                style: TextStyle(color: Colors.red),
+              )
+            else
+              const Text(
+                'Hinweis: Die monatlichen Ausgaben werden von deinen Ersparnissen abgezogen.',
+                style: TextStyle(color: Colors.orange),
+              ),
           ],
         ),
         actions: [
@@ -647,28 +642,34 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const Text('Abbrechen'),
           ),
           TextButton(
-            onPressed: () {
-              // Erstelle eine Kopie der Spielerdaten mit den aktualisierten Werten
-              final updatedPlayerData = playerData.copyWith(
-                savings: playerData.savings - totalExpenses,
-                salary: 0, // Setze das Gehalt auf 0
-                cashflow: playerData.passiveIncome -
-                    totalExpenses, // Aktualisiere den Cashflow
-              );
+            onPressed: playerData.savings < totalExpenses
+                ? null // Button deaktivieren wenn nicht genügend Ersparnisse
+                : () {
+                    // Erstelle eine Kopie der Spielerdaten mit den aktualisierten Werten
+                    final updatedPlayerData = playerData.copyWith(
+                      savings: playerData.savings - totalExpenses,
+                      salary: 0, // Setze das Gehalt auf 0
+                      cashflow: playerData.passiveIncome -
+                          totalExpenses, // Aktualisiere den Cashflow
+                    );
 
-              // Aktualisiere die Spielerdaten
-              playerProvider.setPlayerData(updatedPlayerData);
+                    // Aktualisiere die Spielerdaten
+                    playerProvider.setPlayerData(updatedPlayerData);
 
-              Navigator.of(context).pop();
+                    Navigator.of(context).pop();
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Du bist jetzt arbeitslos!'),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Du bist jetzt arbeitslos!'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  },
+            style: TextButton.styleFrom(
+              foregroundColor: playerData.savings < totalExpenses
+                  ? Colors.grey
+                  : Colors.orange,
+            ),
             child: const Text('Arbeitslos melden'),
           ),
         ],
