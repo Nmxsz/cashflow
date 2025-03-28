@@ -710,7 +710,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('Spendenbetrag: $donationAmount €'),
             const SizedBox(height: 8),
             const Text(
-              'Hinweis: Der Betrag wird von deinen Ersparnissen abgezogen.',
+              'Hinweis: Der Betrag wird von deinen Ersparnissen abgezogen und du darfst für 3 Runden mit 2 Würfeln spielen.',
               style: TextStyle(color: Colors.blue),
             ),
           ],

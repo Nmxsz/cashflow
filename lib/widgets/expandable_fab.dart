@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'dart:ui';
 
 class ExpandableFab extends StatefulWidget {
   const ExpandableFab({
@@ -58,38 +59,31 @@ class _ExpandableFabState extends State<ExpandableFab>
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: Stack(
-        alignment: Alignment.bottomRight,
-        clipBehavior: Clip.none,
-        children: [
-          _buildTapToCloseFab(),
-          ..._buildExpandingActionButtons(),
-          _buildTapToOpenFab(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTapToCloseFab() {
-    return SizedBox(
-      width: 56,
-      height: 56,
-      child: Center(
-        child: Material(
-          shape: const CircleBorder(),
-          clipBehavior: Clip.antiAlias,
-          elevation: 4,
-          child: InkWell(
-            onTap: _toggle,
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Icon(Icons.close,
-                  size: 32, color: Theme.of(context).primaryColor),
+    return Stack(
+      children: [
+        if (_open)
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _toggle,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Container(
+                  color: Colors.black.withOpacity(0.2),
+                ),
+              ),
             ),
           ),
+        SizedBox.expand(
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            clipBehavior: Clip.none,
+            children: [
+              ..._buildExpandingActionButtons(),
+              _buildToggleButton(),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -113,34 +107,29 @@ class _ExpandableFabState extends State<ExpandableFab>
     return children;
   }
 
-  Widget _buildTapToOpenFab() {
-    return IgnorePointer(
-      ignoring: _open,
-      child: AnimatedContainer(
-        transformAlignment: Alignment.center,
-        transform: Matrix4.diagonal3Values(
-          _open ? 0.7 : 1.0,
-          _open ? 0.7 : 1.0,
-          1.0,
-        ),
-        duration: const Duration(milliseconds: 250),
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-        child: AnimatedOpacity(
-          opacity: _open ? 0.0 : 1.0,
-          curve: const Interval(0.25, 1.0, curve: Curves.easeInOut),
-          duration: const Duration(milliseconds: 250),
-          child: SizedBox(
-            width: 56,
-            height: 56,
-            child: Material(
-              shape: const CircleBorder(),
-              clipBehavior: Clip.antiAlias,
-              elevation: 4,
-              child: InkWell(
-                onTap: _toggle,
-                child: Icon(Icons.add,
-                    size: 32, color: Theme.of(context).primaryColor),
-              ),
+  Widget _buildToggleButton() {
+    return AnimatedContainer(
+      transformAlignment: Alignment.center,
+      transform: Matrix4.diagonal3Values(
+        _open ? 0.7 : 1.0,
+        _open ? 0.7 : 1.0,
+        1.0,
+      ),
+      duration: const Duration(milliseconds: 250),
+      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      child: SizedBox(
+        width: 56,
+        height: 56,
+        child: Material(
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          elevation: 4,
+          child: InkWell(
+            onTap: _toggle,
+            child: Icon(
+              _open ? Icons.close : Icons.add,
+              size: 32,
+              color: Theme.of(context).primaryColor,
             ),
           ),
         ),
@@ -216,36 +205,43 @@ class ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.secondary,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: theme.colorScheme.onSecondary,
-              fontSize: 14,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(16),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondary,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: theme.colorScheme.onSecondary,
+                  fontSize: 14,
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Material(
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              color: theme.colorScheme.secondary,
+              elevation: 4,
+              child: IconButton(
+                onPressed: onPressed,
+                icon: icon,
+                color: theme.colorScheme.onSecondary,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        Material(
-          shape: const CircleBorder(),
-          clipBehavior: Clip.antiAlias,
-          color: theme.colorScheme.secondary,
-          elevation: 4,
-          child: IconButton(
-            onPressed: onPressed,
-            icon: icon,
-            color: theme.colorScheme.onSecondary,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
