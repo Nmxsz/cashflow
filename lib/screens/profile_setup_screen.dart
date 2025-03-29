@@ -266,21 +266,24 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 type = ExpenseType.homePayment;
                 break;
               case 2:
-                type = ExpenseType.carLoan;
+                type = ExpenseType.schoolLoan;
                 break;
               case 3:
-                type = ExpenseType.creditCard;
+                type = ExpenseType.carLoan;
                 break;
               case 4:
-                type = ExpenseType.retail;
+                type = ExpenseType.creditCard;
                 break;
               case 5:
-                type = ExpenseType.otherExpenses;
+                type = ExpenseType.retail;
                 break;
               case 6:
-                type = ExpenseType.perChild;
+                type = ExpenseType.otherExpenses;
                 break;
               case 7:
+                type = ExpenseType.perChild;
+                break;
+              case 8:
                 type = ExpenseType.bankLoan;
                 break;
               default:

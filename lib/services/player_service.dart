@@ -40,7 +40,7 @@ class PlayerService {
   Future<PlayerData> processPayday(PlayerData playerData) async {
     // Reduziere die Hypotheken für Immobilien
     for (var asset in playerData.assets) {
-      if (asset.category == 'Immobilien') {
+      if (asset.category == AssetCategory.realEstate) {
         // Finde die zugehörige Hypothek
         final mortgageIndex = playerData.liabilities.indexWhere(
           (liability) => liability.name == 'Hypothek: ${asset.name}',
@@ -82,7 +82,7 @@ class PlayerService {
     playerData.addAsset(asset);
 
     // Bei Immobilien wird nur die Anzahlung von den Ersparnissen abgezogen
-    if (asset.category == 'Immobilien') {
+    if (asset.category == AssetCategory.realEstate) {
       playerData.savings -= asset.downPayment;
     } else {
       // Bei anderen Assets werden die gesamten Kosten abgezogen
@@ -100,26 +100,26 @@ class PlayerService {
     playerData.addLiability(liability);
 
     // Nur für nicht-Immobilien-Hypotheken: Füge eine entsprechende Ausgabe hinzu
-    if (liability.category != 'Immobilien-Hypothek') {
+    if (liability.category != LiabilityCategory.propertyMortgage) {
       // Bestimme den Ausgabentyp basierend auf der Kategorie
       ExpenseType expenseType;
       switch (liability.category) {
-        case 'Eigenheim-Hypothek':
+        case LiabilityCategory.homeMortgage:
           expenseType = ExpenseType.homePayment;
           break;
-        case 'BAföG-Darlehen':
+        case LiabilityCategory.studentLoan:
           expenseType = ExpenseType.schoolLoan;
           break;
-        case 'Autokredite':
+        case LiabilityCategory.carLoan:
           expenseType = ExpenseType.carLoan;
           break;
-        case 'Kreditkarten':
+        case LiabilityCategory.creditCard:
           expenseType = ExpenseType.creditCard;
           break;
-        case 'Verbraucherkreditschulden':
+        case LiabilityCategory.consumerDebt:
           expenseType = ExpenseType.retail;
           break;
-        case 'Bankdarlehen':
+        case LiabilityCategory.bankLoan:
           expenseType = ExpenseType.bankLoan;
           break;
         default:
