@@ -39,13 +39,7 @@ class MainApp extends StatelessWidget {
           return MaterialApp(
             title: 'Cashflow Tracker',
             theme: AppThemes.currentTheme,
-            darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: Brightness.dark,
-              ),
-              useMaterial3: true,
-            ),
+            darkTheme: AppThemes.currentDarkTheme,
             themeMode: themeProvider.themeMode,
             home: HomeScreen(key: homeScreenKey),
             debugShowCheckedModeBanner: false,
